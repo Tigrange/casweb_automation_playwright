@@ -1,0 +1,16 @@
+
+# Playwright
+node_modules/
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/playwright/.auth/
+
+# Secrets — never commit real credentials
+.env
+.env.*
+!.env.example
+
+# Captured auth state (contains session cookies)
+/tests/support/storageState/*.json

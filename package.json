@@ -1,0 +1,27 @@
+{
+  "name": "cazweb-automation",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "playwright test",
+    "test:test": "playwright test --project=e2e-chromium",
+    "test:headed": "playwright test --headed",
+    "test:report": "playwright show-report",
+    "test:setup": "playwright test --project=setup",
+    "test:visual": "playwright test --project=visual",
+    "test:totogaming": "cross-env PARTNER=totogaming playwright test --project=e2e-chromium",
+    "test:totogaming:prod": "cross-env PARTNER=totogaming PLAYWRIGHT_ENV=prod playwright test --project=e2e-chromium",
+    "test:totoro": "cross-env PARTNER=totoro playwright test --project=e2e-chromium",
+    "test:totoro:prod": "cross-env PARTNER=totoro PLAYWRIGHT_ENV=prod playwright test --project=e2e-chromium"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@playwright/test": "^1.63.0",
+    "@types/node": "^26.6.2",
+    "cross-env": "^10.1.0"
+  }
+}

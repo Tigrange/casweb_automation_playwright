@@ -1,0 +1,66 @@
+// GitHub Actions CI for the Playwright suite.
+//
+// Runs the default partner (totogaming) against the selected environment.
+// Secrets are injected from GitHub repository settings and override `.env`.
+
+name: Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment (test|prod)'
+        required: true
+        default: 'test'
+        type: choice
+        options: [test, prod]
+      partner:
+        description: 'Partner to run'
+        required: false
+        default: 'totogaming'
+        type: string
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    strategy:
+      fail-fast: false
+      matrix:
+        project: [e2e-chromium, e2e-firefox, e2e-webkit]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
+
+      # Credentials are supplied as CI secrets (never committed).
+      - name: Run tests
+        env:
+          PLAYWRIGHT_ENV: ${{ inputs.environment || 'test' }}
+          PARTNER: ${{ inputs.partner || 'totogaming' }}
+          TOTOGAMING_TEST_USERNAME: ${{ secrets.TOTOGAMING_TEST_USERNAME }}
+          TOTOGAMING_TEST_PASSWORD: ${{ secrets.TOTOGAMING_TEST_PASSWORD }}
+          TOTOGAMING_PROD_USERNAME: ${{ secrets.TOTOGAMING_PROD_USERNAME }}
+          TOTOGAMING_PROD_PASSWORD: ${{ secrets.TOTOGAMING_PROD_PASSWORD }}
+        run: npx playwright test --project=${{ matrix.project }}
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report-${{ matrix.project }}
+          path: playwright-report/
+          retention-days: 14
