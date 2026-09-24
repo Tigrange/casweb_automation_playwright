@@ -48,6 +48,17 @@ export const PARTNERS = {
     },
     features: { casino: true, betting: true, inbox: true },
   },
+  test: {
+    id: 'test',
+    displayName: 'Test Partner',
+    envs: {
+      test: {
+        baseURL: 'https://test.partner.com/',
+        credsEnvPrefix: 'TEST',
+      },
+    },
+    features: { casino: true, betting: true, inbox: true },
+  },
 };
 
 /** @returns {string[]} all registered partner ids */
