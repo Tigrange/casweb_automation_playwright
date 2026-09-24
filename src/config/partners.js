@@ -48,21 +48,6 @@ export const PARTNERS = {
     },
     features: { casino: true, betting: true, inbox: true },
   },
-
-  // ── Template for adding another partner ──────────────────────────────
-  // Just uncomment, pick a unique id/prefix, and use the same creds-var naming.
-  //
-  // partner2: {
-  //   id: 'partner2',
-  //   displayName: 'Partner 2',
-  //   envs: {
-  //     test: { baseURL: 'https://partner2.test/',
-  //             credsEnvPrefix: 'PARTNER2' },
-  //     prod: { baseURL: 'https://partner2.prod/',
-  //             credsEnvPrefix: 'PARTNER2' },
-  //   },
-  //   features: { casino: true, betting: false, inbox: true },
-  // },
 };
 
 /** @returns {string[]} all registered partner ids */
