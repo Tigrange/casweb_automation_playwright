@@ -6,15 +6,19 @@
   "main": "index.js",
   "scripts": {
     "test": "playwright test",
+    "test:clean:force_stop_all_processes": "powershell -NoProfile -Command \"Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -like '*@playwright/test*test-server*' } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }; if (Test-Path 'test-results') { Remove-Item -Recurse -Force 'test-results' }\"",
     "test:test": "playwright test --project=e2e-chromium",
     "test:headed": "playwright test --headed",
     "test:report": "playwright show-report",
     "test:setup": "playwright test --project=setup",
     "test:visual": "playwright test --project=visual",
     "test:totogaming": "cross-env PARTNER=totogaming playwright test --project=e2e-chromium",
-    "test:totogaming:prod": "cross-env PARTNER=totogaming PLAYWRIGHT_ENV=prod playwright test --project=e2e-chromium",
     "test:totoro": "cross-env PARTNER=totoro playwright test --project=e2e-chromium",
-    "test:totoro:prod": "cross-env PARTNER=totoro PLAYWRIGHT_ENV=prod playwright test --project=e2e-chromium"
+    "test:totogaming:prod:web": "cross-env PARTNER=totogaming PLAYWRIGHT_ENV=prod playwright test --project=e2e-chromium --headed",
+    "test:totogaming:prod:mobile": "cross-env PARTNER=totogaming PLAYWRIGHT_ENV=prod playwright test  --project=e2e-mobile-chromium --headed",
+    "test:totoro:prod": "cross-env PARTNER=totoro PLAYWRIGHT_ENV=prod playwright test --project=e2e-chromium",
+    "test:cozbet_shared:prod": "cross-env PARTNER=cozbet_shared PLAYWRIGHT_ENV=prod playwright test --project=e2e-chromium",
+    "test:betfa:prod": "cross-env PARTNER=betfa PLAYWRIGHT_ENV=prod playwright test --project=e2e-chromium  --headed"
   },
   "keywords": [],
   "author": "",

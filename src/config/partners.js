@@ -22,10 +22,10 @@ export const PARTNERS = {
     id: 'totogaming',
     displayName: 'TotoGaming',
     envs: {
-      test: {
-        baseURL: 'https://totogaming.tst-digi.com/',
-        credsEnvPrefix: 'TOTOGAMING',
-      },
+      // test: {
+      //   baseURL: 'https://totogaming.tst-digi.com/',
+      //   credsEnvPrefix: 'TOTOGAMING',
+      // },
       prod: {
         baseURL: 'https://totogaming.am/',
         credsEnvPrefix: 'TOTOGAMING',
@@ -37,10 +37,10 @@ export const PARTNERS = {
     id: 'totoro',
     displayName: 'totoro',
     envs: {
-      test: {
-        baseURL: 'https://totoro.tst-digi.com/',
-        credsEnvPrefix: 'TOTOGAMINGRO',
-      },
+      // test: {
+      //   baseURL: 'https://totoro.tst-digi.com/',
+      //   credsEnvPrefix: 'TOTOGAMINGRO',
+      // },
       prod: {
         baseURL: 'https://totogaming.ro/en',
         credsEnvPrefix: 'TOTOGAMINGRO',
@@ -48,13 +48,24 @@ export const PARTNERS = {
     },
     features: { casino: true, betting: true, inbox: true },
   },
-  test: {
-    id: 'test',
-    displayName: 'Test Partner',
+  cozbet_shared: {
+    id: 'cozbet_shared',
+    displayName: 'Cozbet Shared',
     envs: {
-      test: {
-        baseURL: 'https://test.partner.com/',
-        credsEnvPrefix: 'TEST',
+      prod: {
+        baseURL: 'https://cozbet002.com/en',
+        credsEnvPrefix: 'COZBET_SHARED',
+      },
+    },
+    features: { casino: true, betting: true, inbox: true },
+  },
+  betfa: {
+    id: 'betfa',
+    displayName: 'Betfa',
+    envs: {
+      prod: {
+        baseURL: 'https://betfa.com/',
+        credsEnvPrefix: 'BETFA',
       },
     },
     features: { casino: true, betting: true, inbox: true },

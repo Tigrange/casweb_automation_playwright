@@ -26,10 +26,11 @@
 //   const LOGIN_POPUPS = { totoro: TotoroLoginPopup };
 
 import { LoginPopup } from '../pages/auth/LoginPopup.js';
+import { BetfaLoginPopup } from '../pages/auth/BetfaLoginPopup.js';
 
 /** Partner-id → login page-object class. Absent ids resolve to LoginPopup. */
 const LOGIN_POPUPS = {
-  // totoro: TotoroLoginPopup,
+  betfa: BetfaLoginPopup, // Betfa uses the same login flow as TotoGaming
 };
 
 /**

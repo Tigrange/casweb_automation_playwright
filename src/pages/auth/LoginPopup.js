@@ -26,11 +26,12 @@ export class LoginPopup extends BasePage {
       },
       container: {
         desktop: automationSelector('login_form'),
-        mobile: '???',//missing mobile selector for login form
+        mobile: '#staticLogin',//missing mobile selector for login form
       },
-      username: { desktop: automationSelector('email_input'), mobile: automationSelector('email_input')},
-      password: { desktop: automationSelector('password_input'), mobile: automationSelector('password_input')},
-      submit: { desktop: automationSelector('login_button'), mobile: '#js_login_btn'},
+      username: { desktop: automationSelector('email_input'), mobile: automationSelector('email_input') },
+      password: { desktop: automationSelector('password_input'), mobile: automationSelector('password_input') },
+      submit: { desktop: automationSelector('login_button'), mobile: '#staticLoginButton' },
+      errorMessage: { desktop: '#loginError', mobile: '#loginerrormessage' },
     };
   }
 
@@ -42,7 +43,7 @@ export class LoginPopup extends BasePage {
     this.usernameInput = this.sel('username', this.container);
     this.passwordInput = this.sel('password', this.container);
     this.submitButton = this.sel('submit', this.container);
-    this.errorMessage = this.locator('#loginError', this.container);
+    this.errorMessage = this.sel('errorMessage', this.container);
   }
 
   /**

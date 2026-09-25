@@ -11,11 +11,9 @@
 // Subclasses are created with `(page[, baseURL])`.
 
 import { automationSelector } from '../utils/automation.js';
+import { getDevice } from '../utils/device.js';
 
 export class BasePage {
-  /** Viewport widths below this are treated as mobile. */
-  static MOBILE_BREAKPOINT = 600;
-
   /**
    * @param {import('@playwright/test').Page} page
    * @param {string} [baseURL]
@@ -28,8 +26,7 @@ export class BasePage {
 
   /** @returns {string} 'mobile' when viewport is narrow, else 'desktop'. */
   detectDevice(page) {
-    const vp = page.viewportSize();
-    return vp && vp.width < BasePage.MOBILE_BREAKPOINT ? 'mobile' : 'desktop';
+    return getDevice(page);
   }
 
   /**

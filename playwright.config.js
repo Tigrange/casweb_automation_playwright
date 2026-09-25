@@ -79,12 +79,12 @@ export default defineConfig({
      * objects handle the different mobile DOM. ENABLE when mobile coverage is
      * wanted; disabled by default so runs target the desktop website.
      */
-    // {
-    //   name: 'e2e-mobile-chromium',
-    //   testIgnore: [/support[\\/]setup\.spec\.js/, /visual[\\/]/, /storageState/],
-    //   use: { ...devices['Pixel 5'] },
-    //   dependencies: ['setup'],
-    // },
+    {
+      name: 'e2e-mobile-chromium',
+      testIgnore: [/support[\\/]setup\.spec\.js/, /visual[\\/]/, /storageState/],
+      use: { ...devices['Pixel 5'] },
+      dependencies: ['setup'],
+    },
     // {
     //   name: 'e2e-mobile-webkit',
     //   testIgnore: [/support[\\/]setup\.spec\.js/, /visual[\\/]/, /storageState/],

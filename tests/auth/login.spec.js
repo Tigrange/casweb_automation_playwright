@@ -9,6 +9,7 @@ import { test, expect } from '../../src/fixtures/base.js';
 import { getLoginPopup } from '../../src/factories/loginRegistry.js';
 import { automationSelector } from '../../src/utils/automation.js';
 import { getRuntimeConfig } from '../../src/config/index.js';
+import { deviceLocator } from '../../src/utils/device.js';
 
 // Valid login: reuse captured session from setup project.
 // The storage-state file is keyed by environment (test|prod) and partner id.
@@ -21,7 +22,10 @@ test.describe('valid login (reused session)', () => {
   test('opens the home page as authenticated user', async ({ runtime, page }) => {
     await page.goto(runtime.baseURL);
     // Deposit button is only visible when the user is logged in.
-    await expect(page.locator(automationSelector('deposit_main_button'))).toBeVisible(); // works for Totogaming; verify per partner
+    await expect(deviceLocator(page, {
+      desktop: automationSelector('deposit_main_button'),
+      mobile: '.tl_logged_in', // mobile deposit button selector
+    })).toBeVisible();
     // Optional per-partner logged-in menu marker:
   });
 });
@@ -32,7 +36,7 @@ test.describe('invalid login', () => {
     const login = getLoginPopup(page, runtime.partnerId);
     await page.goto(runtime.baseURL);
     await login.open();
-    await login.login(runtime.creds.username, 'definitely-wrong-password');
+    await login.login('Wrong Username', 'definitely-wrong-password');
     await login.expectErrorVisible();
   });
 });
