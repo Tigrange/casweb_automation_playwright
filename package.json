@@ -14,11 +14,13 @@
     "test:visual": "playwright test --project=visual",
     "test:totogaming": "cross-env PARTNER=totogaming playwright test --project=e2e-chromium",
     "test:totoro": "cross-env PARTNER=totoro playwright test --project=e2e-chromium",
-    "test:totogaming:prod:web": "cross-env PARTNER=totogaming PLAYWRIGHT_ENV=prod playwright test --project=e2e-chromium --headed",
-    "test:totogaming:prod:mobile": "cross-env PARTNER=totogaming PLAYWRIGHT_ENV=prod playwright test  --project=e2e-mobile-chromium --headed",
+    "test:totogaming:prod:web": "cross-env PARTNER=totogaming PLAYWRIGHT_ENV=prod playwright test --project=e2e-chromium ",
+    "test:totogaming:prod:mobile": "cross-env PARTNER=totogaming PLAYWRIGHT_ENV=prod playwright test  --project=e2e-mobile-chromium",
     "test:totoro:prod": "cross-env PARTNER=totoro PLAYWRIGHT_ENV=prod playwright test --project=e2e-chromium",
     "test:cozbet_shared:prod": "cross-env PARTNER=cozbet_shared PLAYWRIGHT_ENV=prod playwright test --project=e2e-chromium",
-    "test:betfa:prod": "cross-env PARTNER=betfa PLAYWRIGHT_ENV=prod playwright test --project=e2e-chromium  --headed"
+    "test:betfa:prod:web": "cross-env PARTNER=betfa PLAYWRIGHT_ENV=prod playwright test --project=e2e-chromium",
+    "test:betfa:prod:mobile": "cross-env PARTNER=betfa PLAYWRIGHT_ENV=prod playwright test --project=e2e-mobile-chromium"
+
   },
   "keywords": [],
   "author": "",

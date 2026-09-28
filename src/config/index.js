@@ -20,13 +20,22 @@ export function getRuntimeConfig(partnerId = process.env.PARTNER || 'totogaming'
     throw new Error(`Unknown partner "${partnerId}". Registered partners: ${listPartners().join(', ')}`);
   }
 
-  const env = partner.envs[envName];
+  // Fall back to the partner's first configured env when the requested one is
+  // not defined (e.g. a partner that only ships `prod` while the default is
+  // `test`). Keeps config discovery and runtime fixtures from crashing.
+  let env = partner.envs[envName];
+  let resolvedEnvName = envName;
   if (!env) {
-    throw new Error(`Partner "${partnerId}" has no environment "${envName}". Available: ${Object.keys(partner.envs).join(', ')}`);
+    const available = Object.keys(partner.envs);
+    if (available.length === 0) {
+      throw new Error(`Partner "${partnerId}" has no environments configured.`);
+    }
+    resolvedEnvName = available[0];
+    env = partner.envs[resolvedEnvName];
   }
 
   const prefix = env.credsEnvPrefix;
-  const upperEnv = envName.toUpperCase();
+  const upperEnv = resolvedEnvName.toUpperCase();
   const username = process.env[`${prefix}_${upperEnv}_USERNAME`];
   const password = process.env[`${prefix}_${upperEnv}_PASSWORD`];
 
@@ -37,7 +46,7 @@ export function getRuntimeConfig(partnerId = process.env.PARTNER || 'totogaming'
     );
   }
 
-  return { envName, partnerId, partner, baseURL: env.baseURL, creds: { username, password } };
+  return { envName: resolvedEnvName, partnerId, partner, baseURL: env.baseURL, creds: { username, password } };
 }
 
 export { PARTNERS, listPartners } from './partners.js';

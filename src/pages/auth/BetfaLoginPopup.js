@@ -15,7 +15,7 @@ export class BetfaLoginPopup extends LoginPopup {
       username: { desktop: automationSelector('email_input'), mobile: automationSelector('email_input') },
       password: { desktop: automationSelector('password_input'), mobile: automationSelector('password_input') },
       submit: { desktop: automationSelector('login_button'), mobile: '#staticLoginButton' },
-      errorMessage: { desktop: '#loginError', mobile: '#loginerrormessage' }
+      errorMessage: { desktop: '#loginerrormessage', mobile: '#loginerrormessage' }
     };
   }
   async open() {

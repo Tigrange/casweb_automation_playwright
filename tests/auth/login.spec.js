@@ -16,10 +16,10 @@ import { deviceLocator } from '../../src/utils/device.js';
 const { envName, partnerId } = getRuntimeConfig();
 const storageStateFile = `${process.cwd()}/tests/support/storageState/${envName}-${partnerId}.json`;
 
-test.describe('valid login (reused session)', () => {
+test.describe('LOGIN [01]: valid login (reused session)', () => {
   test.use({ storageState: storageStateFile });
 
-  test('opens the home page as authenticated user', async ({ runtime, page }) => {
+  test('LOGIN [01]: opens the home page as authenticated user', async ({ runtime, page }) => {
     await page.goto(runtime.baseURL);
     // Deposit button is only visible when the user is logged in.
     await expect(deviceLocator(page, {
@@ -31,8 +31,8 @@ test.describe('valid login (reused session)', () => {
 });
 
 // Fresh login with wrong credentials exposes the error state.
-test.describe('invalid login', () => {
-  test('rejects bad credentials and shows an error', async ({ runtime, page }) => {
+test.describe('LOGIN [02]: invalid login', () => {
+  test('LOGIN [02]: rejects bad credentials and shows an error', async ({ runtime, page }) => {
     const login = getLoginPopup(page, runtime.partnerId);
     await page.goto(runtime.baseURL);
     await login.open();

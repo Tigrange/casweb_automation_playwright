@@ -6,10 +6,10 @@ const CHARS = 'abcdefghijklmnopqrstuvwxyz0123456789';
  * Generate a random alphanumeric string.
  * @param {number} [length]
  */
-export function randomString(length = 8) {
+export function randomString(length = 8, charset = CHARS) {
   let out = '';
   for (let i = 0; i < length; i += 1) {
-    out += CHARS[Math.floor(Math.random() * CHARS.length)];
+    out += charset[Math.floor(Math.random() * charset.length)];
   }
   return out;
 }
@@ -17,8 +17,8 @@ export function randomString(length = 8) {
 /**
  * Generate a unique-ish email for registration tests.
  */
-export function randomEmail(prefix = 'qa') {
-  return `${prefix}.${randomString(10)}@example.com`;
+export function randomEmail(prefix = 'qa', domain = 'example.com') {
+  return `${prefix}.${randomString(10)}@${domain}`;
 }
 
 /**
