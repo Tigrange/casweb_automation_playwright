@@ -35,9 +35,14 @@ export default defineConfig({
 
   reporter: 'html',
 
+  /** Production sites are slow; give each test and assertion more headroom. */
+  timeout: 60_000,
+  expect: { timeout: 10_000 },
+
   use: {
     baseURL: RUNTIME.baseURL,
     trace: 'on-first-retry',
+    navigationTimeout: 30_000,
   },
 
   projects: [

@@ -29,7 +29,7 @@ for (const [partnerId, partner] of entries) {
       const { baseURL, creds } = getRuntimeConfig(partnerId, envName);
 
       const login = getLoginPopup(page, partnerId);
-      await page.goto(baseURL);
+      await page.goto(baseURL, { waitUntil: 'domcontentloaded' });
       await login.open();
       await login.login(creds.username, creds.password);
       await login.expectLoggedIn();

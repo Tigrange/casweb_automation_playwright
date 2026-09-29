@@ -20,7 +20,7 @@ test.describe('LOGIN [01]: valid login (reused session)', () => {
   test.use({ storageState: storageStateFile });
 
   test('LOGIN [01]: opens the home page as authenticated user', async ({ runtime, page }) => {
-    await page.goto(runtime.baseURL);
+    await page.goto(runtime.baseURL, { waitUntil: 'domcontentloaded' });
     // Deposit button is only visible when the user is logged in.
     await expect(deviceLocator(page, {
       desktop: automationSelector('deposit_main_button'),
@@ -34,7 +34,7 @@ test.describe('LOGIN [01]: valid login (reused session)', () => {
 test.describe('LOGIN [02]: invalid login', () => {
   test('LOGIN [02]: rejects bad credentials and shows an error', async ({ runtime, page }) => {
     const login = getLoginPopup(page, runtime.partnerId);
-    await page.goto(runtime.baseURL);
+    await page.goto(runtime.baseURL, { waitUntil: 'domcontentloaded' });
     await login.open();
     await login.login('Wrong Username', 'definitely-wrong-password');
     await login.expectErrorVisible();

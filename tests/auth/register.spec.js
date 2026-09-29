@@ -17,7 +17,7 @@ const VALID = buildRegisterData(partnerId);
 
 /** Navigate home, open the register dialog for the active partner, return it. */
 async function openRegister(page) {
-  await page.goto('/');
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
   const register = getRegisterPopup(page, partnerId);
   await register.open();
   return register;
