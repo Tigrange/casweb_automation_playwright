@@ -1,42 +1,66 @@
-// Login flow blueprint. Demonstrates the full pattern:
-//   - authenticated context via storageState (from setup.spec.js)
-//   - a negative test (bad credentials -> error) authenticated fresh
+// Login flow tests.
 //
-// This is a reference test to validate the plumbing before scaling to
-// casino / betting / inbox suites.
+//   LOGIN [00]  real E2E login      -> lives in tests/support/setup.*.spec.js
+//                                      (auth-desktop / auth-mobile projects)
+//   LOGIN [01]  session check       -> restores the saved storage state and
+//                                      verifies the session; it NEVER logs in.
+//   LOGIN [02]  invalid credentials -> fresh (logged-out) context, fake creds.
+//
+// The session check loads the state for the current project's device
+// (project.metadata.authDevice): desktop browsers reuse <env>-<partner>-desktop,
+// the mobile project reuses <env>-<partner>-mobile.
+//
+// Tags are plain strings so playwright.config.js / the runner can select tests.
+// Default is POSITIVE ONLY; pass TEST_TYPE=all (or --type=all) for @negative.
 
 import { test, expect } from '../../src/fixtures/base.js';
 import { getLoginPopup } from '../../src/factories/loginRegistry.js';
 import { automationSelector } from '../../src/utils/automation.js';
 import { getRuntimeConfig } from '../../src/config/index.js';
+import { storageStatePath } from '../../src/config/storageState.js';
 import { deviceLocator } from '../../src/utils/device.js';
 
-// Valid login: reuse captured session from setup project.
-// The storage-state file is keyed by environment (test|prod) and partner id.
-const { envName, partnerId } = getRuntimeConfig();
-const storageStateFile = `${process.cwd()}/tests/support/storageState/${envName}-${partnerId}.json`;
+const { envName, partnerId, partner } = getRuntimeConfig();
 
-test.describe('LOGIN [01]: valid login (reused session)', () => {
-  test.use({ storageState: storageStateFile });
-
-  test('LOGIN [01]: opens the home page as authenticated user', async ({ runtime, page }) => {
-    await page.goto(runtime.baseURL, { waitUntil: 'domcontentloaded' });
-    // Deposit button is only visible when the user is logged in.
-    await expect(deviceLocator(page, {
-      desktop: automationSelector('deposit_main_button'),
-      mobile: '.tl_logged_in', // mobile deposit button selector
-    })).toBeVisible();
-    // Optional per-partner logged-in menu marker:
+// Session check: reuse the authenticated state captured by the auth setup
+// project for this project's device. Resolved at runtime from project metadata
+// so the same spec works in every browser project without re-logging in.
+test.describe('LOGIN [01]: session check (reused state)', () => {
+  test.use({
+    storageState: async ({}, use, testInfo) => {
+      const device = testInfo.project.metadata.authDevice ?? 'desktop';
+      await use(storageStatePath(envName, partnerId, device));
+    },
   });
+
+  test(
+    `LOGIN [01] SESSION check (reused state) · ${partner.displayName}`,
+    { tag: ['@positive', '@smoke', '@regression'] },
+    async ({ runtime, page }) => {
+      await page.goto(runtime.baseURL, { waitUntil: 'domcontentloaded' });
+      // Device-aware logged-in marker: deposit button (desktop) / .tl_logged_in
+      // (mobile). No login is performed here — only the restored session.
+      await expect(deviceLocator(page, {
+        desktop: automationSelector('deposit_main_button'),
+        mobile: '.tl_logged_in',
+      })).toBeVisible();
+    },
+  );
 });
 
 // Fresh login with wrong credentials exposes the error state.
-test.describe('LOGIN [02]: invalid login', () => {
-  test('LOGIN [02]: rejects bad credentials and shows an error', async ({ runtime, page }) => {
-    const login = getLoginPopup(page, runtime.partnerId);
-    await page.goto(runtime.baseURL, { waitUntil: 'domcontentloaded' });
-    await login.open();
-    await login.login('Wrong Username', 'definitely-wrong-password');
-    await login.expectErrorVisible();
-  });
+test.describe('LOGIN [02]: invalid credentials UI', () => {
+  test(
+    `LOGIN [02] invalid credentials UI · ${partner.displayName}`,
+    { tag: '@negative' },
+    async ({ runtime, page }) => {
+      const login = getLoginPopup(page, runtime.partnerId);
+      await page.goto(runtime.baseURL, { waitUntil: 'domcontentloaded' });
+      await login.open();
+      await login.login('Wrong Username', 'definitely-wrong-password');
+      // NOTE: the popup is known NOT to close after a failed login, so we assert
+      // the error message directly and never wait for the popup to hide.
+      await login.expectErrorVisible();
+    },
+  );
 });
