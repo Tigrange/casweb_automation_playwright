@@ -99,8 +99,8 @@ function safeRemove(target) {
 const DEFAULT_PROJECTS = [
   'e2e-chromium',
   'e2e-mobile-chromium',
-  // 'e2e-firefox',
-  // 'e2e-webkit'
+  'e2e-firefox',
+  'e2e-webkit'
 ];
 
 // Default partner concurrency in PHASE MODE. Deliberately conservative: the

@@ -35,12 +35,20 @@ await runAllPartners({
     {
       name: 'desktop',
       auth: 'auth-desktop',
-      projects: ['auth-desktop', 'e2e-chromium', 'e2e-firefox', 'e2e-webkit'],
+      projects: [
+        'auth-desktop',
+        'e2e-chromium',
+        // 'e2e-firefox',
+        // 'e2e-webkit'
+      ],
     },
     {
       name: 'mobile',
       auth: 'auth-mobile',
-      projects: ['auth-mobile', 'e2e-mobile-chromium'],
+      projects: [
+        'auth-mobile',
+        'e2e-mobile-chromium'
+      ],
     },
   ],
 });
