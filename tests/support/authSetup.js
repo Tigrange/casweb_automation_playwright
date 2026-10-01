@@ -17,6 +17,7 @@
 // hard-coded and partner-specific popups keep working.
 
 import { test, expect } from '@playwright/test';
+import { writeFile } from 'node:fs/promises';
 import { PARTNERS } from '../../src/config/partners.js';
 import { getRuntimeConfig } from '../../src/config/index.js';
 import { getLoginPopup } from '../../src/factories/loginRegistry.js';
@@ -57,9 +58,22 @@ export function defineAuthSetup(device) {
           // Confirm the session is really authenticated before persisting it.
           await expect(page.locator(marker)).toBeVisible();
 
-          await page
-            .context()
-            .storageState({ path: storageStatePath(envName, partner.id, device) });
+          // Persist the session. Firefox intermittently fails to restore the
+          // state when it has to open a page for a THIRD-PARTY origin (e.g.
+          // fin-*.com payment/tracking domains) — the saved session then fails
+          // to load in other browsers. Those origins are not needed for the
+          // authenticated session, so keep only the partner's own origin
+          // (its baseURL host and subdomains) and leave ALL cookies untouched.
+          const state = await page.context().storageState();
+          const firstPartyHost = new URL(baseURL).hostname.replace(/^www\./, '');
+          state.origins = state.origins.filter((origin) => {
+            const host = new URL(origin.origin).hostname;
+            return host === firstPartyHost || host.endsWith(`.${firstPartyHost}`);
+          });
+          await writeFile(
+            storageStatePath(envName, partner.id, device),
+            JSON.stringify(state, null, 2),
+          );
         },
       );
     }

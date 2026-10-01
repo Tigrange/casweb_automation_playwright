@@ -104,7 +104,6 @@ playwright.config.js
 | `e2e-chromium` / `e2e-firefox` / `e2e-webkit` | Login session checks (reuse desktop state) | reuse |
 | `e2e-mobile-chromium` | Login session check (reuse mobile state) | reuse |
 | `register-chromium` / `register-mobile-chromium` | Registration, logged out | none |
-| `visual` | Visual regression (Chromium) | reuse |
 
 ### Environment variables
 
@@ -129,31 +128,49 @@ cp .env.example .env          # then fill credentials
 
 ### Running tests
 
-```bash
-# One partner
-node scripts/run-login-all-partners.js totogaming
-node scripts/run-register-all-partners.js totogaming
+Use the npm scripts. They already include the settings that work on this machine
+(`--workers=2`, and `--parallel=2` for multi-partner runs).
 
-# All partners
+```bash
+# One partner (login and/or register). Available per-partner scripts:
+#   test:login:<partner>  and  test:register:<partner>
+#   partners: totogaming, totoro, cozbet_shared, betfa
+npm run test:login:totogaming
+npm run test:register:totogaming
+
+# All working partners (currently totogaming + totoro), login then register
 npm run test:login:all
 npm run test:register:all
 
 # Full suite: REGISTER then LOGIN (fail-fast)
 npm run test:suite
-node scripts/run-all.js totogaming
 
 # Include negative tests (LOGIN [02])
-node scripts/run-login-all-partners.js totogaming --type=all
-node scripts/run-all.js totogaming --type=all
+npm run test:login:all:full
 
 # Direct Playwright (feature-scoped artifacts)
 PW_FEATURE=login PARTNER=totogaming npx playwright test --project=e2e-chromium
 ```
 
-Login runner flags: `--env=`, `--type=`, `--tag=`, `--parallel=<n>`
-(partner concurrency, default 2), `--workers=<n>`, `--projects=`, and
-`-- <playwright args>` passthrough. On memory-limited machines prefer
-`--parallel=2 --workers=2` or `--parallel=1`.
+Runner scripts can also be called directly. Login runner flags: `--env=`,
+`--type=`, `--tag=`, `--parallel=<n>` (partner concurrency, default 2),
+`--workers=<n>`, `--projects=`, and `-- <playwright args>` passthrough.
+
+```bash
+node scripts/run-login-all-partners.js totogaming totoro --parallel=2 --workers=2
+node scripts/run-login-all-partners.js totogaming --type=all
+node scripts/run-all.js totogaming totoro --parallel=2 --workers=2
+```
+
+> **Note (this machine):** the default worker count (about half the CPU threads)
+> is too high for the available RAM when more than one partner runs in parallel.
+> WebKit and Firefox then time out while starting. Always pass `--workers=2` for
+> parallel partner runs; the npm scripts above already do. Use `--parallel=1` on
+> a memory-constrained machine.
+
+> `npm run test:report` opens the default Playwright report folder. Reports from
+> the runners live under `artifacts/<feature>/report/` — open those with
+> `npx playwright show-report artifacts/login/report` (or `register`).
 
 ### Adding a test
 
@@ -195,13 +212,24 @@ artifacts/                      # or PW_ARTIFACTS_DIR
 - `PW_ARTIFACTS_DIR=<path>` relocates the root (useful to keep large trees off
   OneDrive). Only generated artifacts move; source and tests stay in the repo.
 
+### Firefox storageState and third-party origins
+
+Firefox can intermittently fail to restore Playwright `storageState` when the saved state contains unnecessary third-party origins. In our environment, origins such as `fin-tg.com` / `fin-sh.com` were not required for authentication but could cause Firefox to fail while restoring the saved state.
+
+To mitigate this, `tests/support/authSetup.js` persists only the partner's first-party origin (the runtime `baseURL` host and its subdomains) in `state.origins`. Cookies are preserved unchanged.
+
+This has been verified across Chromium, Firefox, WebKit, and mobile Chromium, including multi-partner parallel login runs for TotoGaming and Totoro.
+
+This mitigation addresses the specific third-party-origin storageState restore issue observed in the test environment.
+
 ### Known limitations
 
 - A partner account allows one active session, so desktop and mobile auth for the
   same partner must not run concurrently; the runner already sequences them.
-- Firefox occasionally fails to restore the saved storage state under heavy
-  concurrent load (`Error setting storage state` / IndexedDB). It passes when run
-  alone; no workaround is applied.
+- Firefox storageState restore can still fail under heavy concurrent load for
+  other reasons. The third-party-origin mitigation above addresses the specific
+  problem observed here; it is not a guarantee against every Firefox
+  storageState issue.
 - On machines with low free RAM, parallel real logins can exceed timeouts; use
   `--workers=2` or `--parallel=1`.
 - Two runners for the **same** feature at the same time (e.g. two Login runs for
