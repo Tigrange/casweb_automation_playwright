@@ -18,7 +18,7 @@
 
     "test:login:totogaming": "node scripts/run-login-all-partners.js totogaming --workers=2",
     "test:login:totoro": "node scripts/run-login-all-partners.js totoro --workers=2",
-    "test:login:shared_partners": "node scripts/run-login-all-partners.js cozbet_shared --workers=2",
+    "test:login:shared_partners": "node scripts/run-login-all-partners.js cozbet --workers=2",
     "test:login:albatross_partners": "node scripts/run-login-all-partners.js betfa --workers=2",
 
 
@@ -28,7 +28,7 @@
 
     "test:register:totogaming": "node scripts/run-register-all-partners.js totogaming --workers=2",
     "test:register:totoro": "node scripts/run-register-all-partners.js totoro --workers=2",
-    "test:register:cozbet_shared": "node scripts/run-register-all-partners.js cozbet_shared --workers=2",
+    "test:register:cozbet": "node scripts/run-register-all-partners.js cozbet --workers=2",
     "test:register:betfa": "node scripts/run-register-all-partners.js betfa --workers=2",
     "test:register:all": "node scripts/run-register-all-partners.js totogaming totoro --workers=2",
 

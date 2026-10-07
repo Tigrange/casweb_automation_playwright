@@ -21,6 +21,7 @@ export const PARTNERS = {
   totogaming: {
     id: 'totogaming',
     displayName: 'TotoGaming',
+    server: 'totogaming',
     envs: {
       // test: {
       //   baseURL: 'https://totogaming.tst-digi.com/',
@@ -36,6 +37,7 @@ export const PARTNERS = {
   totoro: {
     id: 'totoro',
     displayName: 'totoro',
+    sever: 'totoro',
     envs: {
       // test: {
       //   baseURL: 'https://totoro.tst-digi.com/',
@@ -48,9 +50,10 @@ export const PARTNERS = {
     },
     features: { casino: true, betting: true, inbox: true },
   },
-  cozbet_shared: {
-    id: 'cozbet_shared',
-    displayName: 'Cozbet Shared',
+  cozbet: {
+    id: 'cozbet',
+    displayName: 'Cozbet',
+    server: 'shared',
     envs: {
       prod: {
         baseURL: 'https://cozbet002.com/en',
@@ -62,6 +65,7 @@ export const PARTNERS = {
   betfa: {
     id: 'betfa',
     displayName: 'Betfa',
+    server: 'albatross',
     envs: {
       prod: {
         baseURL: 'https://betfa.com/',

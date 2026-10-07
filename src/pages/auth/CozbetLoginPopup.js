@@ -14,9 +14,11 @@ export class CozbetLoginPopup extends LoginPopup {
       },
       username: { desktop: automationSelector('email_input'), mobile: automationSelector('email_input') },
       password: { desktop: automationSelector('password_input'), mobile: automationSelector('password_input') },
-      submit: { desktop: automationSelector('login_button'), mobile: '#staticLoginButton' },
+      submit: { desktop: automationSelector('login_button'), mobile: '#loginButton' },
       errorMessage: { desktop: '#loginerrormessage', mobile: '#loginerrormessage' }
     };
   }
+
+
 }
 
