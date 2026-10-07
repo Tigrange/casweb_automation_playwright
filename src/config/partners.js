@@ -14,6 +14,7 @@
  * @property {string} displayName  human readable
  * @property {Record<string, PartnerEnv>} envs keyed by env name (test/prod/...)
  * @property {{casino?: boolean, betting?: boolean, inbox?: boolean}} features
+ * @property {boolean} cashierNew  true = new cashier deposit view, false = old
  */
 
 /** @type {Record<string, Partner>} */
@@ -33,6 +34,7 @@ export const PARTNERS = {
       },
     },
     features: { casino: true, betting: true, inbox: true },
+    cashierNew: false,
   },
   totoro: {
     id: 'totoro',
@@ -49,6 +51,7 @@ export const PARTNERS = {
       },
     },
     features: { casino: true, betting: true, inbox: true },
+    cashierNew: true,
   },
   cozbet: {
     id: 'cozbet',
@@ -61,6 +64,7 @@ export const PARTNERS = {
       },
     },
     features: { casino: true, betting: true, inbox: true },
+    cashierNew: false,
   },
   betfa: {
     id: 'betfa',
@@ -73,6 +77,7 @@ export const PARTNERS = {
       },
     },
     features: { casino: true, betting: true, inbox: true },
+    cashierNew: false,
   },
 };
 
