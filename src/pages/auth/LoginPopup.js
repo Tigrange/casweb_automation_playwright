@@ -32,6 +32,10 @@ export class LoginPopup extends BasePage {
       password: { desktop: automationSelector('password_input'), mobile: automationSelector('password_input') },
       submit: { desktop: automationSelector('login_button'), mobile: '#staticLoginButton' },
       errorMessage: { desktop: '#loginError', mobile: '#loginerrormessage' },
+      depositTrigger: {
+        desktop: automationSelector('deposit_main_button'),
+        mobile: '.cw_headerDropDown_mob_depositBtn', // TODO verify mobile trigger
+      },
     };
   }
 
@@ -44,6 +48,7 @@ export class LoginPopup extends BasePage {
     this.passwordInput = this.sel('password', this.container);
     this.submitButton = this.sel('submit', this.container);
     this.errorMessage = this.sel('errorMessage', this.container);
+    this.depositTrigger = this.sel('depositTrigger').first();
   }
 
   /**
@@ -73,6 +78,7 @@ export class LoginPopup extends BasePage {
   /** Wait until the login dialog closes — i.e. login succeeded. */
   async expectLoggedIn() {
     await this.container.waitFor({ state: 'hidden' });
+    await this.depositTrigger.waitFor({ state: 'visible' });
   }
 
   async expectErrorVisible() {

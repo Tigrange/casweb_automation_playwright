@@ -21,12 +21,16 @@ export class CashierNewPage extends BasePage {
       // Header button that opens the deposit popup.
       depositTrigger: {
         desktop: automationSelector('deposit_main_button'),
-        mobile: automationSelector('deposit_main_button'), // TODO verify mobile trigger
+        mobile: '.cw_headerDropDown_mob_depositBtn', // TODO verify mobile trigger
       },
       // Deposit popup root that must become visible after open().
       container: {
-        desktop: automationSelector('deposit_popup'), // TODO verify
-        mobile: automationSelector('deposit_popup'), // TODO verify
+        desktop: '#deposit', // TODO verify
+        mobile: '#deposit', // TODO verify
+      },
+      cashierHeader: {
+        desktop: '#cashier_text', // TODO verify
+        mobile: '#cashier_text', // TODO verify
       },
     };
   }
@@ -51,6 +55,7 @@ export class CashierNewPage extends BasePage {
    */
   async verifyDepositAvailable() {
     await this.container.waitFor({ state: 'visible' });
+    await this.sel('cashierHeader', this.container).toHaveText('Cashier');
   }
 }
 

@@ -15,7 +15,11 @@ export class BetfaLoginPopup extends LoginPopup {
       username: { desktop: automationSelector('email_input'), mobile: automationSelector('email_input') },
       password: { desktop: automationSelector('password_input'), mobile: automationSelector('password_input') },
       submit: { desktop: automationSelector('login_button'), mobile: '#staticLoginButton' },
-      errorMessage: { desktop: '#loginerrormessage', mobile: '#loginerrormessage' } //ONLY THIS IS DIFFERENT FROM LoginPopup.js
+      errorMessage: { desktop: '#loginerrormessage', mobile: '#loginerrormessage' }, //ONLY THIS IS DIFFERENT FROM LoginPopup.js
+      depositTrigger: {
+        desktop: automationSelector('deposit_main_button'),
+        mobile: '.cw_headerDropDown_mob_depositBtn', // TODO verify mobile trigger
+      },
     };
   }
 

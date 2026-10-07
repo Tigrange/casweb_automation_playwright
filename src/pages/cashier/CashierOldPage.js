@@ -26,12 +26,16 @@ export class CashierOldPage extends BasePage {
       // a logged-in desktop session — see src/config/authMarkers.js).
       depositTrigger: {
         desktop: automationSelector('deposit_main_button'),
-        mobile: automationSelector('deposit_main_button'), // TODO verify mobile trigger
+        mobile: '.cw_headerDropDown_mob_depositBtn', // TODO verify mobile trigger
       },
       // Cashier root that must become visible after open().
       container: {
-        desktop: automationSelector('cashier'), // TODO verify
-        mobile: automationSelector('cashier'), // TODO verify
+        desktop: '#deposit', // TODO verify
+        mobile: '#deposit', // TODO verify
+      },
+      MenuItem: {
+        desktop: '#deposit_tab', // TODO verify
+        mobile: '#deposit_tab', // TODO verify
       },
       // Deposit-method tile; only the first one is exercised.
       method: {
@@ -57,6 +61,7 @@ export class CashierOldPage extends BasePage {
     this.openTrigger = this.sel('depositTrigger').first();
     this.amountInput = this.sel('amount', this.container);
     this.payButton = this.sel('payButton', this.container);
+    this.menuItem = this.sel('MenuItem',this.page).first();
   }
 
   /**
@@ -67,6 +72,7 @@ export class CashierOldPage extends BasePage {
   async open() {
     await this.openTrigger.evaluate((el) => el.click());
     await this.container.waitFor({ state: 'visible' });
+    await expect(this.menuItem).toContainClass('active');
   }
 
   /**
@@ -76,7 +82,7 @@ export class CashierOldPage extends BasePage {
    *
    * @param {{ amount: string }} data
    */
-  async verifyDepositAvailable({ amount }) {
+  async verifyDepositAvailable({ amount }) { //TODO
     await this.sel('method', this.container).first().click();
     await this.amountInput.fill(amount);
 
