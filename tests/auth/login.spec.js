@@ -15,9 +15,9 @@
 
 import { test, expect } from '../../src/fixtures/base.js';
 import { getLoginPopup } from '../../src/factories/loginRegistry.js';
-import { automationSelector } from '../../src/utils/automation.js';
 import { getRuntimeConfig } from '../../src/config/index.js';
 import { storageStatePath } from '../../src/config/storageState.js';
+import { LOGGED_IN_MARKERS } from '../../src/config/authMarkers.js';
 import { deviceLocator } from '../../src/utils/device.js';
 
 const { envName, partnerId, partner } = getRuntimeConfig();
@@ -40,10 +40,7 @@ test.describe('LOGIN [01]: session check (reused state)', () => {
       await page.goto(runtime.baseURL, { waitUntil: 'domcontentloaded' });
       // Device-aware logged-in marker: deposit button (desktop) / .tl_logged_in
       // (mobile). No login is performed here — only the restored session.
-      await expect(deviceLocator(page, {
-        desktop: automationSelector('deposit_main_button'),
-        mobile: '.tl_logged_in',
-      })).toBeVisible();
+      await expect(deviceLocator(page, LOGGED_IN_MARKERS)).toBeVisible();
     },
   );
 });

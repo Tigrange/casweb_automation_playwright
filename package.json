@@ -2,8 +2,7 @@
   "name": "cazweb-automation",
   "version": "1.0.0",
   "type": "module",
-  "description": "",
-  "main": "index.js",
+  "description": "Playwright E2E framework for Cazweb partner sites",
   "scripts": {
     "test": "playwright test",
     "test:positive": "cross-env TEST_TYPE=positive playwright test",
@@ -16,11 +15,14 @@
     "test:report": "playwright show-report",
     "test:clean:force_stop_all_processes": "powershell -NoProfile -Command \"Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -like '*@playwright/test*test-server*' } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }; foreach ($d in 'test-results','playwright-report','blob-report','blob-report-merged','artifacts') { if (Test-Path $d) { Remove-Item -Recurse -Force $d } }\"",
 
+    // Partner-specific login 
     "test:login:totogaming": "node scripts/run-login-all-partners.js totogaming --workers=2",
     "test:login:totoro": "node scripts/run-login-all-partners.js totoro --workers=2",
-    "test:login:cozbet_shared": "node scripts/run-login-all-partners.js cozbet_shared --workers=2",
-    "test:login:betfa": "node scripts/run-login-all-partners.js betfa --workers=2",
-    "test:login:all": "node scripts/run-login-all-partners.js totogaming totoro --parallel=2 --workers=2",
+    "test:login:shared_partners": "node scripts/run-login-all-partners.js cozbet_shared --workers=2",
+    "test:login:albatross_partners": "node scripts/run-login-all-partners.js betfa --workers=2",
+
+
+    "test:login:all": "node scripts/run-login-all-partners.js --parallel=2 --workers=2",
     "test:login:all:negative": "node scripts/run-login-all-partners.js totogaming totoro --parallel=2 --workers=2 --type=negative",
     "test:login:all:full": "node scripts/run-login-all-partners.js totogaming totoro --parallel=2 --workers=2 --type=all",
 
@@ -29,8 +31,6 @@
     "test:register:cozbet_shared": "node scripts/run-register-all-partners.js cozbet_shared --workers=2",
     "test:register:betfa": "node scripts/run-register-all-partners.js betfa --workers=2",
     "test:register:all": "node scripts/run-register-all-partners.js totogaming totoro --workers=2",
-    "test:register:all:negative": "node scripts/run-register-all-partners.js totogaming totoro --workers=2 --type=negative",
-    "test:register:all:full": "node scripts/run-register-all-partners.js totogaming totoro --workers=2 --type=all",
 
     "test:suite": "node scripts/run-all.js totogaming totoro --parallel=2 --workers=2"
   },

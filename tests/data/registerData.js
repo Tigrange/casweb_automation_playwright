@@ -22,7 +22,6 @@ const BY_PARTNER = {
     currency: 'AMD',
   }),
   betfa: () => ({
-    // Betfa Step 1 has no username; it collects name + date of birth instead.
     firstName: `Test${randomString(4)}`,
     lastName: `User${randomString(4)}`,
     dobDay: '1',
@@ -32,6 +31,18 @@ const BY_PARTNER = {
     mobile: `9${randomString(9, '0123456789')}`,
     currency: 'USD',
   }),
+  totoro: () => ({
+    password: 'Admin123!',
+    username: `testuser_${randomString(8)}`,
+    firstName: `Test${randomString(4)}`,
+    lastName: `User${randomString(4)}`,
+    dobDay: '1',
+    dobMonth: '1',
+    dobYear: '1990',
+    email: randomEmail('testuser', 'totoro.com'),
+    mobile: `7${randomString(8, '0123456789')}`,
+    currency: 'RON',
+  })
 };
 
 /**

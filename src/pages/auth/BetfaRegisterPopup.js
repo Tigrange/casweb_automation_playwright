@@ -51,11 +51,4 @@ export class BetfaRegisterPopup extends RegisterPopup {
     await this.select2('dobMonth', data.dobMonth);
     await this.select2('dobYear', data.dobYear);
   }
-
-  async open() {
-    await super.open(); // Call the parent class's open() method to maintain the original behavior
-    console.log("BetfaRegisterPopup open() called"); // custom code for BetfaRegisterPopup
-  }
-  //override other methods if needed or add new methods specific to BetfaRegisterPopup
-
 }

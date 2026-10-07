@@ -110,7 +110,7 @@ playwright.config.js
 | Variable | Purpose | Default |
 |---|---|---|
 | `PARTNER` | target partner id | `totogaming` |
-| `PLAYWRIGHT_ENV` | `test` \| `prod` | `test` |
+| `PLAYWRIGHT_ENV` | `test` \| `prod` | `prod` (only `prod` is configured; an unconfigured env fails instead of falling back) |
 | `TEST_TYPE` | `positive` \| `negative` \| `all` | `positive` |
 | `TEST_TAG` | `smoke` \| `regression` | – |
 | `PW_VIDEO` | `on` to keep videos of failed tests | off |
@@ -234,3 +234,8 @@ This mitigation addresses the specific third-party-origin storageState restore i
   `--workers=2` or `--parallel=1`.
 - Two runners for the **same** feature at the same time (e.g. two Login runs for
   the same partner) still share the same storage-state file; run one at a time.
+- On Windows a leftover Playwright `test-server` process can lock `test-results`
+  and block a new run. `npm run test:clean:force_stop_all_processes` force-stops
+  those processes and removes the generated report/artifact directories.
+- Only Login and Registration are implemented so far; casino, betting and inbox
+  page objects are not built yet.

@@ -7,7 +7,9 @@ import { getArtifactPaths } from './scripts/lib/artifacts.js';
 /**
  * Cazweb Automation — Playwright config.
  *
- * Environments:  PLAYWRIGHT_ENV=test|prod   (test is default)
+ * Environments:  PLAYWRIGHT_ENV=test|prod   (prod is default; the registered
+ *                partners only configure prod, and requesting an unconfigured
+ *                environment fails instead of silently falling back)
  * Partner:       PARTNER=totogaming         (see src/config/partners.js)
  * Test type:     TEST_TYPE=positive|negative|all   (positive is default)
  * Test tag:      TEST_TAG=smoke|regression         (optional, narrows the type)
@@ -188,15 +190,6 @@ export default defineConfig({
       grep: TEST_GREP,
       use: { ...devices['Pixel 5'] },
     },
-
-    // {
-    //   name: 'e2e-mobile-webkit',
-    //   testIgnore: [/support[\\/]setup\.(desktop|mobile)\.spec\.js/, /auth[\\/]register\.spec\.js/, /visual[\\/]/, /storageState/],
-    //   grep: TEST_GREP,
-    //   metadata: { authDevice: 'mobile' },
-    //   use: { ...devices['iPhone 12'] },
-    //   dependencies: ['auth-mobile'],
-    // },
 
     /**
      * Visual regression — chromium-only and sequential for stable, comparable

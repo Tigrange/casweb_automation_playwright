@@ -21,21 +21,15 @@ import { writeFile } from 'node:fs/promises';
 import { PARTNERS } from '../../src/config/partners.js';
 import { getRuntimeConfig } from '../../src/config/index.js';
 import { getLoginPopup } from '../../src/factories/loginRegistry.js';
-import { automationSelector } from '../../src/utils/automation.js';
 import { storageStatePath } from '../../src/config/storageState.js';
-
-// Logged-in markers that already exist in the project — do not invent new ones.
-const LOGGED_IN_MARKER = {
-  desktop: automationSelector('deposit_main_button'),
-  mobile: '.tl_logged_in',
-};
+import { LOGGED_IN_MARKERS } from '../../src/config/authMarkers.js';
 
 /**
  * Register the real-login setup tests for one device.
  * @param {'desktop'|'mobile'} device
  */
 export function defineAuthSetup(device) {
-  const marker = LOGGED_IN_MARKER[device];
+  const marker = LOGGED_IN_MARKERS[device];
 
   // Respect the runner's per-partner invocation; otherwise cover every partner.
   const selected = process.env.PARTNER;

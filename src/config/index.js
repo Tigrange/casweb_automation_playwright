@@ -9,10 +9,12 @@ import { PARTNERS, listPartners } from './partners.js';
  * Resolve the concrete runtime config for a partner/environment.
  *
  * @param {string} [partnerId] defaults to process.env.PARTNER || 'totogaming'
- * @param {string} [envName]   defaults to process.env.PLAYWRIGHT_ENV || 'test'
+ * @param {string} [envName]   defaults to process.env.PLAYWRIGHT_ENV || 'prod'
  * @returns {{ envName: string, partnerId: string, partner: object, baseURL: string, creds: {username: string, password: string} }}
+ * @throws when the partner is unknown, the requested environment is not
+ *   configured for that partner, or its credentials are missing.
  */
-export function getRuntimeConfig(partnerId = process.env.PARTNER || 'totogaming', envName = process.env.PLAYWRIGHT_ENV || 'test') {
+export function getRuntimeConfig(partnerId = process.env.PARTNER || 'totogaming', envName = process.env.PLAYWRIGHT_ENV || 'prod') {
   loadEnv(envName);
 
   const partner = PARTNERS[partnerId];
@@ -20,22 +22,21 @@ export function getRuntimeConfig(partnerId = process.env.PARTNER || 'totogaming'
     throw new Error(`Unknown partner "${partnerId}". Registered partners: ${listPartners().join(', ')}`);
   }
 
-  // Fall back to the partner's first configured env when the requested one is
-  // not defined (e.g. a partner that only ships `prod` while the default is
-  // `test`). Keeps config discovery and runtime fixtures from crashing.
-  let env = partner.envs[envName];
-  let resolvedEnvName = envName;
+  // NEVER fall back to another environment. A run explicitly asking for `test`
+  // must not silently execute against `prod` (or vice versa); if the requested
+  // environment is not configured for this partner, fail loudly.
+  const env = partner.envs[envName];
   if (!env) {
     const available = Object.keys(partner.envs);
-    if (available.length === 0) {
-      throw new Error(`Partner "${partnerId}" has no environments configured.`);
-    }
-    resolvedEnvName = available[0];
-    env = partner.envs[resolvedEnvName];
+    throw new Error(
+      `Environment "${envName}" is not configured for partner "${partnerId}". ` +
+        `Configured environment(s): ${available.length ? available.join(', ') : '(none)'}. ` +
+        `Set PLAYWRIGHT_ENV to one of them.`,
+    );
   }
 
   const prefix = env.credsEnvPrefix;
-  const upperEnv = resolvedEnvName.toUpperCase();
+  const upperEnv = envName.toUpperCase();
   const username = process.env[`${prefix}_${upperEnv}_USERNAME`];
   const password = process.env[`${prefix}_${upperEnv}_PASSWORD`];
 
@@ -46,15 +47,7 @@ export function getRuntimeConfig(partnerId = process.env.PARTNER || 'totogaming'
     );
   }
 
-  return { envName: resolvedEnvName, partnerId, partner, baseURL: env.baseURL, creds: { username, password } };
+  return { envName, partnerId, partner, baseURL: env.baseURL, creds: { username, password } };
 }
 
 export { PARTNERS, listPartners } from './partners.js';
-
-/**
- * Convenience accessor mirroring the process-level defaults.
- * Prefer passing explicit args when iterating over multiple partners.
- */
-export function getRuntimeDefaults() {
-  return getRuntimeConfig();
-}

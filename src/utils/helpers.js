@@ -32,3 +32,8 @@ export function randomPassword(length = 12) {
   }
   return out;
 }
+
+export function randomPhoneNumber(prefix = '+1', length = 10) {
+  const number = Math.floor(Math.random() * Math.pow(10, length)) // Generate a random number with the specified length
+  return `${prefix}${number}`;
+}

@@ -1,7 +1,15 @@
-// GitHub Actions CI for the Playwright suite.
-//
-// Runs the default partner (totogaming) against the selected environment.
-// Secrets are injected from GitHub repository settings and override `.env`.
+# GitHub Actions CI for the Playwright suite.
+#
+# Authentication runs ONCE per partner/device in the dedicated `auth` job, which
+# performs the single real login and writes the storageState files. The browser
+# matrix then REUSES that state (--no-deps) instead of triggering its own
+# auth dependency, so CI never performs concurrent real logins for the same
+# partner (the platform allows only one active session per account).
+#
+# Credentials are supplied as repository secrets and are never committed. The
+# workflow injects the credentials for every registered partner; if the
+# requested partner's environment/credentials are missing, getRuntimeConfig()
+# fails with a clear error instead of falling back to another partner or env.
 
 name: Tests
 
@@ -14,7 +22,7 @@ on:
       environment:
         description: 'Target environment (test|prod)'
         required: true
-        default: 'test'
+        default: 'prod'
         type: choice
         options: [test, prod]
       partner:
@@ -23,8 +31,65 @@ on:
         default: 'totogaming'
         type: string
 
+env:
+  PLAYWRIGHT_ENV: ${{ inputs.environment || 'prod' }}
+  PARTNER: ${{ inputs.partner || 'totogaming' }}
+  # Partner credentials (empty secrets fail clearly inside getRuntimeConfig).
+  TOTOGAMING_TEST_USERNAME: ${{ secrets.TOTOGAMING_TEST_USERNAME }}
+  TOTOGAMING_TEST_PASSWORD: ${{ secrets.TOTOGAMING_TEST_PASSWORD }}
+  TOTOGAMING_PROD_USERNAME: ${{ secrets.TOTOGAMING_PROD_USERNAME }}
+  TOTOGAMING_PROD_PASSWORD: ${{ secrets.TOTOGAMING_PROD_PASSWORD }}
+  TOTOGAMINGRO_PROD_USERNAME: ${{ secrets.TOTOGAMINGRO_PROD_USERNAME }}
+  TOTOGAMINGRO_PROD_PASSWORD: ${{ secrets.TOTOGAMINGRO_PROD_PASSWORD }}
+  COZBET_SHARED_PROD_USERNAME: ${{ secrets.COZBET_SHARED_PROD_USERNAME }}
+  COZBET_SHARED_PROD_PASSWORD: ${{ secrets.COZBET_SHARED_PROD_PASSWORD }}
+  BETFA_PROD_USERNAME: ${{ secrets.BETFA_PROD_USERNAME }}
+  BETFA_PROD_PASSWORD: ${{ secrets.BETFA_PROD_PASSWORD }}
+
 jobs:
+  # One controlled real-login pass per partner/device; produces the storageState
+  # consumed by every browser project below.
+  auth:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Real authentication (desktop + mobile, sequential)
+        run: npx playwright test --project=auth-desktop --project=auth-mobile
+
+      - name: Upload authenticated storageState
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: storageState
+          path: tests/support/storageState/
+          retention-days: 1
+
+      - name: Upload auth report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report-auth
+          path: playwright-report/
+          retention-days: 14
+
+  # Browser projects reuse the auth job's storageState; --no-deps prevents each
+  # from re-running auth-desktop (which would be a concurrent real login).
   e2e:
+    needs: auth
     runs-on: ubuntu-latest
     timeout-minutes: 60
 
@@ -47,16 +112,14 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install --with-deps
 
-      # Credentials are supplied as CI secrets (never committed).
+      - name: Download authenticated storageState
+        uses: actions/download-artifact@v4
+        with:
+          name: storageState
+          path: tests/support/storageState/
+
       - name: Run tests
-        env:
-          PLAYWRIGHT_ENV: ${{ inputs.environment || 'test' }}
-          PARTNER: ${{ inputs.partner || 'totogaming' }}
-          TOTOGAMING_TEST_USERNAME: ${{ secrets.TOTOGAMING_TEST_USERNAME }}
-          TOTOGAMING_TEST_PASSWORD: ${{ secrets.TOTOGAMING_TEST_PASSWORD }}
-          TOTOGAMING_PROD_USERNAME: ${{ secrets.TOTOGAMING_PROD_USERNAME }}
-          TOTOGAMING_PROD_PASSWORD: ${{ secrets.TOTOGAMING_PROD_PASSWORD }}
-        run: npx playwright test --project=${{ matrix.project }}
+        run: npx playwright test --project=${{ matrix.project }} --no-deps
 
       - uses: actions/upload-artifact@v4
         if: always()

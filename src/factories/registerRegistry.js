@@ -8,10 +8,12 @@
 
 import { RegisterPopup } from '../pages/auth/RegisterPopup.js';
 import { BetfaRegisterPopup } from '../pages/auth/BetfaRegisterPopup.js';
+import { TotoRoRegisterPopup } from '../pages/auth/TotoRoRegisterPopup.js'; 
 
 /** Partner-id → register page-object class. Absent ids resolve to RegisterPopup. */
 const REGISTER_POPUPS = {
   betfa: BetfaRegisterPopup,
+  totoro: TotoRoRegisterPopup,
 };
 
 /**
