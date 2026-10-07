@@ -15,7 +15,7 @@
     "test:report": "playwright show-report",
     "test:clean:force_stop_all_processes": "powershell -NoProfile -Command \"Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -like '*@playwright/test*test-server*' } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }; foreach ($d in 'test-results','playwright-report','blob-report','blob-report-merged','artifacts') { if (Test-Path $d) { Remove-Item -Recurse -Force $d } }\"",
 
-    // Partner-specific login 
+
     "test:login:totogaming": "node scripts/run-login-all-partners.js totogaming --workers=2",
     "test:login:totoro": "node scripts/run-login-all-partners.js totoro --workers=2",
     "test:login:shared_partners": "node scripts/run-login-all-partners.js cozbet_shared --workers=2",
