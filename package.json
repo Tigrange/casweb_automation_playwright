@@ -16,23 +16,28 @@
     "test:clean:force_stop_all_processes": "powershell -NoProfile -Command \"Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -like '*@playwright/test*test-server*' } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }; foreach ($d in 'test-results','playwright-report','blob-report','blob-report-merged','artifacts') { if (Test-Path $d) { Remove-Item -Recurse -Force $d } }\"",
 
 
-    "test:login:totogaming": "node scripts/run-login-all-partners.js totogaming --workers=2",
-    "test:login:totoro": "node scripts/run-login-all-partners.js totoro --workers=2",
-    "test:login:shared_partners": "node scripts/run-login-all-partners.js cozbet --workers=2",
-    "test:login:albatross_partners": "node scripts/run-login-all-partners.js betfa --workers=2",
+    "test:feature": "node scripts/run-feature.js",
+    "test:cashier:totogaming": "node scripts/run-feature.js cashier totogaming --workers=2",
+    "test:cashier:totoro": "node scripts/run-feature.js cashier totoro --workers=2",
 
 
-    "test:login:all": "node scripts/run-login-all-partners.js --parallel=2 --workers=2",
-    "test:login:all:negative": "node scripts/run-login-all-partners.js totogaming totoro --parallel=2 --workers=2 --type=negative",
-    "test:login:all:full": "node scripts/run-login-all-partners.js totogaming totoro --parallel=2 --workers=2 --type=all",
+    "test:login:totogaming": "node scripts/run-feature.js login totogaming --workers=2",
+    "test:login:totoro": "node scripts/run-feature.js login totoro --workers=2",
+    "test:login:shared_partners": "node scripts/run-feature.js login cozbet --workers=2",
+    "test:login:albatross_partners": "node scripts/run-feature.js login betfa --workers=2",
 
-    "test:register:totogaming": "node scripts/run-register-all-partners.js totogaming --workers=2",
-    "test:register:totoro": "node scripts/run-register-all-partners.js totoro --workers=2",
-    "test:register:cozbet": "node scripts/run-register-all-partners.js cozbet --workers=2",
-    "test:register:betfa": "node scripts/run-register-all-partners.js betfa --workers=2",
-    "test:register:all": "node scripts/run-register-all-partners.js totogaming totoro --workers=2",
 
-    "test:suite": "node scripts/run-all.js totogaming totoro --parallel=2 --workers=2"
+    "test:login:all": "node scripts/run-feature.js login --parallel=2 --workers=2",
+    "test:login:all:negative": "node scripts/run-feature.js login totogaming totoro --parallel=2 --workers=2 --type=negative",
+    "test:login:all:full": "node scripts/run-feature.js login totogaming totoro --parallel=2 --workers=2 --type=all",
+
+    "test:register:totogaming": "node scripts/run-feature.js register totogaming --workers=2",
+    "test:register:totoro": "node scripts/run-feature.js register totoro --workers=2",
+    "test:register:cozbet": "node scripts/run-feature.js register cozbet --workers=2",
+    "test:register:betfa": "node scripts/run-feature.js register betfa --workers=2",
+    "test:register:all": "node scripts/run-feature.js register totogaming totoro --workers=2",
+
+    "test:suite": "node scripts/run-all.js --parallel=2 --workers=2"
   },
   "keywords": [],
   "author": "",

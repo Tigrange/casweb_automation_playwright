@@ -27,19 +27,24 @@ are handled for you.
 
 ### Runners
 
-There are two feature runners plus a top-level orchestrator:
+Features are declared in `scripts/features.js` and run through ONE generic runner:
 
-- `scripts/run-register-all-partners.js` — registration only. **No auth, no
-  login, no storageState.**
-- `scripts/run-login-all-partners.js` — login only, in two sequential phases per
-  partner: desktop (one real login → Chromium/Firefox/WebKit) then mobile (one
-  real login → mobile Chromium).
-- `scripts/run-all.js` — runs Register, then Login.
+- `scripts/features.js` — the feature registry (spec, label, phases/projects,
+  `enabled`). **Adding a feature = adding one entry here.** Set `enabled: false`
+  to skip a feature in the full suite without deleting its config; it can still
+  be run explicitly with `run-feature.js`.
+- `scripts/run-feature.js <feature>` — generic runner. Looks the feature up and
+  delegates to the shared engine `scripts/lib/runAllPartners.js`. Login and
+  Cashier run in two sequential phases per partner (desktop: one real login →
+  Chromium/Firefox/WebKit, then mobile: one real login → mobile Chromium).
+  Register is **auth-free** (no login, no storageState).
+- `scripts/run-all.js` — top-level orchestrator. Runs the `SUITE` order from
+  `scripts/features.js` (currently Register → Login), fail-fast.
 
 ```mermaid
 flowchart TD
-    A[run-all.js] --> B[REGISTER runner]
-    B -->|pass| C[LOGIN runner]
+    A[run-all.js] --> B[run-feature.js register]
+    B -->|pass| C[run-feature.js login]
     B -->|fail| D[stop, exit non-zero]
     C --> E[desktop phase: auth-desktop + chromium/firefox/webkit]
     E --> F[mobile phase: auth-mobile + mobile-chromium]
@@ -90,7 +95,9 @@ tests/
   support/      authSetup.js, setup.desktop.spec.js, setup.mobile.spec.js
   data/         registerData.js
 scripts/
-  run-all.js, run-login-all-partners.js, run-register-all-partners.js
+  features.js   feature registry (spec/label/phases)
+  run-feature.js  generic per-feature runner
+  run-all.js    full-suite orchestrator (SUITE order, fail-fast)
   lib/          runAllPartners.js (engine), artifacts.js (feature paths)
 playwright.config.js
 ```
@@ -152,14 +159,24 @@ npm run test:login:all:full
 PW_FEATURE=login PARTNER=totogaming npx playwright test --project=e2e-chromium
 ```
 
-Runner scripts can also be called directly. Login runner flags: `--env=`,
-`--type=`, `--tag=`, `--parallel=<n>` (partner concurrency, default 2),
+Runner scripts can also be called directly via the generic runner. Flags:
+`--env=`, `--type=`, `--tag=`, `--parallel=<n>` (partner concurrency, default 2),
 `--workers=<n>`, `--projects=`, and `-- <playwright args>` passthrough.
 
 ```bash
-node scripts/run-login-all-partners.js totogaming totoro --parallel=2 --workers=2
-node scripts/run-login-all-partners.js totogaming --type=all
+# Generic form: <feature> [partners...] [flags]
+node scripts/run-feature.js login totogaming totoro --parallel=2 --workers=2
+node scripts/run-feature.js login totogaming --type=all
+node scripts/run-feature.js register totogaming --type=all
+node scripts/run-feature.js cashier totoro --parallel=2 --workers=2
 node scripts/run-all.js totogaming totoro --parallel=2 --workers=2
+```
+
+Equivalent npm shortcut (feature id after `--`):
+
+```bash
+npm run test:feature -- login totogaming --workers=2
+npm run test:feature -- register --type=all
 ```
 
 > **Note (this machine):** the default worker count (about half the CPU threads)
@@ -177,7 +194,12 @@ node scripts/run-all.js totogaming totoro --parallel=2 --workers=2
 1. Add a spec under `tests/<feature>/`.
 2. Add/extend a page object under `src/pages/`.
 3. Put data under `tests/data/`.
-4. Tag tests with `@positive` and/or `@negative` (and optionally `@smoke` /
+4. Register the feature in `scripts/features.js` (spec, label, and `phases` if it
+   needs an authenticated session, or `defaultProjects`/`noDeps` if it does not).
+   Add its id to `SUITE` there to include it in `run-all.js`. **No new runner
+   file is needed** — `run-feature.js` picks it up. Run it with
+   `npm run test:feature -- <feature> <partner>`.
+5. Tag tests with `@positive` and/or `@negative` (and optionally `@smoke` /
    `@regression`). Import `test`/`expect` from `src/fixtures/base.js` when you
    need the `runtime`/`api` fixtures.
 

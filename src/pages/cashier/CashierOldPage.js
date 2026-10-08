@@ -31,7 +31,7 @@ export class CashierOldPage extends BasePage {
       // Cashier root that must become visible after open().
       container: {
         desktop: '#deposit', // TODO verify
-        mobile: '#deposit', // TODO verify
+        mobile: '#content_paym', // TODO verify
       },
       MenuItem: {
         desktop: '#deposit_tab', // TODO verify
@@ -72,7 +72,11 @@ export class CashierOldPage extends BasePage {
   async open() {
     await this.openTrigger.evaluate((el) => el.click());
     await this.container.waitFor({ state: 'visible' });
-    await expect(this.menuItem).toContainClass('active');
+    // The #deposit_tab menu item only exists in the desktop template.
+    if (this.device === 'desktop') {
+      await expect(this.menuItem).toContainClass('active');
+    }
+
   }
 
   /**
@@ -83,10 +87,11 @@ export class CashierOldPage extends BasePage {
    * @param {{ amount: string }} data
    */
   async verifyDepositAvailable({ amount }) { //TODO
-    await this.sel('method', this.container).first().click();
+    await this.sel('.tl_payment_block', this.container).first().click();
+    ////STOPED HERE BECAUSE NEED TO understant how to continue with different partners selectors
     await this.amountInput.fill(amount);
 
-    // Button must be clickable once a valid amount is entered.
+    // Button must be clickable once a valid amount is entered. 
     await expect(this.payButton).toBeEnabled();
 
     const before = this.page.url();

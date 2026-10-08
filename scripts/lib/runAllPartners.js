@@ -1,7 +1,7 @@
 // scripts/lib/runAllPartners.js
 //
-// Shared engine for the per-feature "run across all partners" scripts
-// (run-login-all-partners.js, run-register-all-partners.js).
+// Shared engine for the generic feature runner (scripts/run-feature.js). Feature
+// config (spec/label/phases) lives in scripts/features.js.
 //
 // WHAT IT DOES
 // ------------
