@@ -69,7 +69,16 @@ export const FEATURES = {
     spec: 'tests/cashier/deposit.spec.js',
     label: 'cashier',
     phases: AUTH_PHASES,
-    enabled: true,
+    enabled: false,
+  },
+
+  // Lobby game-launch. Available on demand; not part of the default suite yet
+  // until the flow (and the multi-provider TODO) is verified.
+  lobby: {
+    spec: 'tests/lobby/launch.spec.js',
+    label: 'lobby',
+    phases: AUTH_PHASES,
+    enabled: false,
   },
 };
 

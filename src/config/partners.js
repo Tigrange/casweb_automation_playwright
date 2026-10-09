@@ -15,6 +15,7 @@
  * @property {Record<string, PartnerEnv>} envs keyed by env name (test/prod/...)
  * @property {{casino?: boolean, betting?: boolean, inbox?: boolean}} features
  * @property {boolean} cashierNew  true = new cashier deposit view, false = old
+ * @property {boolean} lobbyNew    true = new lobby game-launch view, false = old
  */
 
 /** @type {Record<string, Partner>} */
@@ -35,6 +36,7 @@ export const PARTNERS = {
     },
     features: { casino: true, betting: true, inbox: true },
     cashierNew: false,
+    lobbyNew: false,
   },
   totoro: {
     id: 'totoro',
@@ -52,6 +54,7 @@ export const PARTNERS = {
     },
     features: { casino: true, betting: true, inbox: true },
     cashierNew: true,
+    lobbyNew: false,
   },
   cozbet: {
     id: 'cozbet',
@@ -65,6 +68,7 @@ export const PARTNERS = {
     },
     features: { casino: true, betting: true, inbox: true },
     cashierNew: false,
+    lobbyNew: true,
   },
   betfa: {
     id: 'betfa',
@@ -78,6 +82,7 @@ export const PARTNERS = {
     },
     features: { casino: true, betting: true, inbox: true },
     cashierNew: false,
+    lobbyNew: false,
   },
 };
 

@@ -19,6 +19,8 @@
     "test:feature": "node scripts/run-feature.js",
     "test:cashier:totogaming": "node scripts/run-feature.js cashier totogaming --workers=2",
     "test:cashier:totoro": "node scripts/run-feature.js cashier totoro --workers=2",
+    "test:lobby:totogaming": "node scripts/run-feature.js lobby totogaming --workers=2",
+    "test:lobby:totoro": "node scripts/run-feature.js lobby totoro --workers=2",
 
 
     "test:login:totogaming": "node scripts/run-feature.js login totogaming --workers=2",
