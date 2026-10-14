@@ -11,11 +11,11 @@
 // (project.metadata.authDevice), so desktop and mobile each reuse their own
 // session — no login is performed here.
 
-import { test } from '../../src/fixtures/base.js';
-import { getCashierPage } from '../../src/factories/cashierRegistry.js';
-import { getRuntimeConfig } from '../../src/config/index.js';
-import { storageStatePath } from '../../src/config/storageState.js';
-import { buildDepositData } from '../data/depositData.js';
+import { test } from '../../../src/fixtures/base.js';
+import { getCashierPage } from '../../../src/factories/cashierRegistry.js';
+import { getRuntimeConfig } from '../../../src/config/index.js';
+import { storageStatePath } from '../../../src/config/storageState.js';
+import { buildDepositData } from '../../data/depositData.js';
 
 const { envName, partnerId, partner } = getRuntimeConfig();
 

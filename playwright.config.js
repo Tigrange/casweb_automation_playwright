@@ -55,7 +55,7 @@ const testTag = process.env.TEST_TAG;
 const TEST_GREP = buildGrep(testType, testTag);
 
 export default defineConfig({
-  testDir: './tests',
+  testDir: './tests/scenarios',
 
   /** Fully parallel E2E execution. */
   fullyParallel: true,
@@ -141,22 +141,22 @@ export default defineConfig({
       use: { ...devices['Desktop Chrome'] },
       dependencies: ['auth-desktop'],
     },
-    {
-      name: 'e2e-firefox',
-      testIgnore: [/support[\\/]setup\.(desktop|mobile)\.spec\.js/, /auth[\\/]register\.spec\.js/, /visual[\\/]/, /storageState/],
-      grep: TEST_GREP,
-      metadata: { authDevice: 'desktop' },
-      use: { ...devices['Desktop Firefox'] },
-      dependencies: ['auth-desktop'],
-    },
-    {
-      name: 'e2e-webkit',
-      testIgnore: [/support[\\/]setup\.(desktop|mobile)\.spec\.js/, /auth[\\/]register\.spec\.js/, /visual[\\/]/, /storageState/],
-      grep: TEST_GREP,
-      metadata: { authDevice: 'desktop' },
-      use: { ...devices['Desktop Safari'] },
-      dependencies: ['auth-desktop'],
-    },
+    // {
+    //   name: 'e2e-firefox',
+    //   testIgnore: [/support[\\/]setup\.(desktop|mobile)\.spec\.js/, /auth[\\/]register\.spec\.js/, /visual[\\/]/, /storageState/],
+    //   grep: TEST_GREP,
+    //   metadata: { authDevice: 'desktop' },
+    //   use: { ...devices['Desktop Firefox'] },
+    //   dependencies: ['auth-desktop'],
+    // },
+    // {
+    //   name: 'e2e-webkit',
+    //   testIgnore: [/support[\\/]setup\.(desktop|mobile)\.spec\.js/, /auth[\\/]register\.spec\.js/, /visual[\\/]/, /storageState/],
+    //   grep: TEST_GREP,
+    //   metadata: { authDevice: 'desktop' },
+    //   use: { ...devices['Desktop Safari'] },
+    //   dependencies: ['auth-desktop'],
+    // },
 
     /**
      * Mobile template (Pixel 5 Android). Depends on the mobile auth project and

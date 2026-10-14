@@ -13,12 +13,12 @@
 // Tags are plain strings so playwright.config.js / the runner can select tests.
 // Default is POSITIVE ONLY; pass TEST_TYPE=all (or --type=all) for @negative.
 
-import { test, expect } from '../../src/fixtures/base.js';
-import { getLoginPopup } from '../../src/factories/loginRegistry.js';
-import { getRuntimeConfig } from '../../src/config/index.js';
-import { storageStatePath } from '../../src/config/storageState.js';
-import { LOGGED_IN_MARKERS } from '../../src/config/authMarkers.js';
-import { deviceLocator } from '../../src/utils/device.js';
+import { test, expect } from '#src/fixtures/base.js';
+import { getLoginPopup } from '#src/factories/loginRegistry.js';
+import { getRuntimeConfig } from '#src/config/index.js';
+import { storageStatePath } from '#src/config/storageState.js';
+import { LOGGED_IN_MARKERS } from '#src/config/authMarkers.js';
+import { deviceLocator } from '#src/utils/device.js';
 
 const { envName, partnerId, partner } = getRuntimeConfig();
 

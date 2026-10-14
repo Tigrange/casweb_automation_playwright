@@ -3,7 +3,7 @@
 // currency, ...) are generated per partner id. `buildRegisterData(partnerId)`
 // merges the two, with partner values taking precedence.
 
-import { randomString, randomEmail, randomPassword } from '../../src/utils/helpers.js';
+import { randomString, randomEmail, randomPassword } from '#src/utils/helpers.js';
 
 /** Values valid for all partners. */
 const COMMON = {

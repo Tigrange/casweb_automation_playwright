@@ -49,14 +49,14 @@ const AUTH_PHASES = [
 /** Feature id → runAllPartners options. */
 export const FEATURES = {
   login: {
-    spec: 'tests/auth/login.spec.js',
+    spec: 'tests/scenarios/auth/login.spec.js',
     label: 'login',
     phases: AUTH_PHASES,
     enabled: true,
   },
 
   register: {
-    spec: 'tests/auth/register.spec.js',
+    spec: 'tests/scenarios/auth/register.spec.js',
     label: 'register',
     defaultProjects: ['register-chromium', 'register-mobile-chromium'],
     noDeps: true,
@@ -66,7 +66,7 @@ export const FEATURES = {
   // Deposit/cashier scaffolding. Available on demand; not part of the default
   // suite yet (see SUITE below) until the flow is verified end-to-end.
   cashier: {
-    spec: 'tests/cashier/deposit.spec.js',
+    spec: 'tests/paused_scenarios/cashier/deposit.spec.js',
     label: 'cashier',
     phases: AUTH_PHASES,
     enabled: false,
@@ -75,7 +75,7 @@ export const FEATURES = {
   // Lobby game-launch. Available on demand; not part of the default suite yet
   // until the flow (and the multi-provider TODO) is verified.
   lobby: {
-    spec: 'tests/lobby/launch.spec.js',
+    spec: 'tests/paused_scenarios/lobby/launch.spec.js',
     label: 'lobby',
     phases: AUTH_PHASES,
     enabled: false,

@@ -4,7 +4,8 @@
 // registered partner x environment it:
 //   1. opens the partner site (desktop or mobile template, by device)
 //   2. opens the login popup via the partner-aware LoginPopup factory
-//   3. submits real credentials
+//   3. submits real credentials (mobile may use a separate account when the
+//      platform enforces a single session per account; see getRuntimeConfig)
 //   4. verifies the login succeeded (form closed AND the logged-in marker)
 //   5. saves the authenticated storage state to
 //      tests/support/storageState/<env>-<partner>-<device>.json
@@ -18,11 +19,11 @@
 
 import { test, expect } from '@playwright/test';
 import { writeFile } from 'node:fs/promises';
-import { PARTNERS } from '../../src/config/partners.js';
-import { getRuntimeConfig } from '../../src/config/index.js';
-import { getLoginPopup } from '../../src/factories/loginRegistry.js';
-import { storageStatePath } from '../../src/config/storageState.js';
-import { LOGGED_IN_MARKERS } from '../../src/config/authMarkers.js';
+import { PARTNERS } from '#src/config/partners.js';
+import { getRuntimeConfig } from '#src/config/index.js';
+import { getLoginPopup } from '#src/factories/loginRegistry.js';
+import { storageStatePath } from '#src/config/storageState.js';
+import { LOGGED_IN_MARKERS } from '#src/config/authMarkers.js';
 
 /**
  * Register the real-login setup tests for one device.
@@ -42,7 +43,7 @@ export function defineAuthSetup(device) {
       test(
         `LOGIN [00] REAL E2E login · ${partner.displayName} [${envName}] · ${device}`,
         async ({ page }) => {
-          const { baseURL, creds } = getRuntimeConfig(partnerId, envName);
+          const { baseURL, creds } = getRuntimeConfig(partnerId, envName, device);
 
           const login = getLoginPopup(page, partnerId);
           await page.goto(baseURL, { waitUntil: 'domcontentloaded' });

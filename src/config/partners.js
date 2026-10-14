@@ -25,10 +25,10 @@ export const PARTNERS = {
     displayName: 'TotoGaming',
     server: 'totogaming',
     envs: {
-      // test: {
-      //   baseURL: 'https://totogaming.tst-digi.com/',
-      //   credsEnvPrefix: 'TOTOGAMING',
-      // },
+      test: {
+        baseURL: 'https://totogaming.tst-digi.com/',
+        credsEnvPrefix: 'TOTOGAMING',
+      },
       prod: {
         baseURL: 'https://totogaming.am/',
         credsEnvPrefix: 'TOTOGAMING',
@@ -61,6 +61,10 @@ export const PARTNERS = {
     displayName: 'Cozbet',
     server: 'shared',
     envs: {
+      test: {
+        baseURL: 'https://cozbet.tst-digi.com/',
+        credsEnvPrefix: 'COZBET_TEST',
+      },
       prod: {
         baseURL: 'https://cozbet002.com/en',
         credsEnvPrefix: 'COZBET_SHARED',

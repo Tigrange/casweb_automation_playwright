@@ -12,10 +12,10 @@
 // dedicated package.json scripts; now TEST_TYPE (default positive) selects it
 // for every project, and TEST_TAG=regression narrows to this suite.
 
-import { test, expect } from '../../src/fixtures/base.js';
-import { getRegisterPopup } from '../../src/factories/registerRegistry.js';
-import { getRuntimeConfig } from '../../src/config/index.js';
-import { buildRegisterData } from '../data/registerData.js';
+import { test, expect } from '#src/fixtures/base.js';
+import { getRegisterPopup } from '#src/factories/registerRegistry.js';
+import { getRuntimeConfig } from '#src/config/index.js';
+import { buildRegisterData } from '#data/registerData.js';
 
 const { partnerId } = getRuntimeConfig();
 const VALID = buildRegisterData(partnerId);

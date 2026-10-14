@@ -3,6 +3,11 @@
   "version": "1.0.0",
   "type": "module",
   "description": "Playwright E2E framework for Cazweb partner sites",
+  "imports": {
+    "#src/*": "./src/*",
+    "#data/*": "./tests/data/*",
+    "#support/*": "./tests/support/*"
+  },
   "scripts": {
     "test": "playwright test",
     "test:positive": "cross-env TEST_TYPE=positive playwright test",
@@ -17,27 +22,8 @@
 
 
     "test:feature": "node scripts/run-feature.js",
-    "test:cashier:totogaming": "node scripts/run-feature.js cashier totogaming --workers=2",
-    "test:cashier:totoro": "node scripts/run-feature.js cashier totoro --workers=2",
-    "test:lobby:totogaming": "node scripts/run-feature.js lobby totogaming --workers=2",
-    "test:lobby:totoro": "node scripts/run-feature.js lobby totoro --workers=2",
+    "test:totogaming:cozbet": "node scripts/run-feature.js totogaming cozbet --workers=2",
 
-
-    "test:login:totogaming": "node scripts/run-feature.js login totogaming --workers=2",
-    "test:login:totoro": "node scripts/run-feature.js login totoro --workers=2",
-    "test:login:shared_partners": "node scripts/run-feature.js login cozbet --workers=2",
-    "test:login:albatross_partners": "node scripts/run-feature.js login betfa --workers=2",
-
-
-    "test:login:all": "node scripts/run-feature.js login --parallel=2 --workers=2",
-    "test:login:all:negative": "node scripts/run-feature.js login totogaming totoro --parallel=2 --workers=2 --type=negative",
-    "test:login:all:full": "node scripts/run-feature.js login totogaming totoro --parallel=2 --workers=2 --type=all",
-
-    "test:register:totogaming": "node scripts/run-feature.js register totogaming --workers=2",
-    "test:register:totoro": "node scripts/run-feature.js register totoro --workers=2",
-    "test:register:cozbet": "node scripts/run-feature.js register cozbet --workers=2",
-    "test:register:betfa": "node scripts/run-feature.js register betfa --workers=2",
-    "test:register:all": "node scripts/run-feature.js register totogaming totoro --workers=2",
 
     "test:suite": "node scripts/run-all.js --parallel=2 --workers=2"
   },
