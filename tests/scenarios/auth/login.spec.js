@@ -38,7 +38,6 @@ test.describe('LOGIN [01]: session check (reused state)', () => {
     { tag: ['@positive', '@smoke', '@regression'] },
     async ({ runtime, page }) => {
       await page.goto(runtime.baseURL, { waitUntil: 'domcontentloaded' });
-      // Device-aware logged-in marker: deposit button (desktop) / .tl_logged_in
       // (mobile). No login is performed here — only the restored session.
       await expect(deviceLocator(page, LOGGED_IN_MARKERS)).toBeVisible();
     },

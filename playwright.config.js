@@ -55,7 +55,7 @@ const testTag = process.env.TEST_TAG;
 const TEST_GREP = buildGrep(testType, testTag);
 
 export default defineConfig({
-  testDir: './tests/scenarios',
+  testDir: './tests',
 
   /** Fully parallel E2E execution. */
   fullyParallel: true,
@@ -135,7 +135,7 @@ export default defineConfig({
      */
     {
       name: 'e2e-chromium',
-      testIgnore: [/support[\\/]setup\.(desktop|mobile)\.spec\.js/, /auth[\\/]register\.spec\.js/, /visual[\\/]/, /storageState/],
+      testIgnore: [/support[\\/]setup\.(desktop|mobile)\.spec\.js/, /auth[\\/]register\.spec\.js/, /visual[\\/]/ ],
       grep: TEST_GREP,
       metadata: { authDevice: 'desktop' },
       use: { ...devices['Desktop Chrome'] },

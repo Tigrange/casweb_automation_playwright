@@ -25,12 +25,13 @@ export function randomEmail(prefix = 'qa', domain = 'example.com') {
  * A strong default password satisfying typical complexity rules.
  */
 export function randomPassword(length = 12) {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$';
-  let out = '';
-  for (let i = 0; i < length; i += 1) {
-    out += chars[Math.floor(Math.random() * chars.length)];
-  }
-  return out;
+  // const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$';
+  // let out = '';
+  // for (let i = 0; i < length; i += 1) {
+  //   out += chars[Math.floor(Math.random() * chars.length)];
+  // }
+  // return out;
+  return 'Admin123!';
 }
 
 export function randomPhoneNumber(prefix = '+1', length = 10) {

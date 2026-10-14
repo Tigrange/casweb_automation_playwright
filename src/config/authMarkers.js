@@ -8,7 +8,7 @@ import { automationSelector } from '../utils/automation.js';
 /** Device → selector that is only present once authenticated. */
 export const LOGGED_IN_MARKERS = {
   desktop: automationSelector('deposit_main_button'),
-  mobile: '.tl_logged_in',
+  mobile: '.cw_headerDropDown_mob_depositBtn',
 };
 
 export default LOGGED_IN_MARKERS;

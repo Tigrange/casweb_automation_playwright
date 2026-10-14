@@ -2,16 +2,22 @@
 //
 // This is the ONLY place a real username/password login is performed. For each
 // registered partner x environment it:
-//   1. opens the partner site (desktop or mobile template, by device)
-//   2. opens the login popup via the partner-aware LoginPopup factory
-//   3. submits real credentials (mobile may use a separate account when the
-//      platform enforces a single session per account; see getRuntimeConfig)
-//   4. verifies the login succeeded (form closed AND the logged-in marker)
-//   5. saves the authenticated storage state to
+//   1. creates a FRESH player via the B2B Registration API (each run, each
+//      device), so authenticated tests never depend on a shared .env account
+//   2. opens the partner site (desktop or mobile template, by device)
+//   3. opens the login popup via the partner-aware LoginPopup factory
+//   4. logs in with the freshly registered player's credentials
+//   5. verifies the login succeeded (form closed AND the logged-in marker)
+//   6. persists the player to
+//      tests/support/players/<env>-<partner>-<device>.json and the
+//      authenticated storage state to
 //      tests/support/storageState/<env>-<partner>-<device>.json
 //
-// The e2e projects consume that file and only verify the restored session; they
-// never log in again (see tests/auth/login.spec.js).
+// The e2e projects consume the storage-state file and only verify the restored
+// session; they never log in again (see tests/auth/login.spec.js).
+//
+// Registration is fail-hard: if the API call fails the setup test fails and
+// Playwright skips every dependent e2e project (never a silent fallback).
 //
 // Partner handling uses the existing registry (src/config/partners.js) and the
 // existing LoginPopup factory (src/factories/loginRegistry.js), so no partner is
@@ -20,9 +26,10 @@
 import { test, expect } from '@playwright/test';
 import { writeFile } from 'node:fs/promises';
 import { PARTNERS } from '#src/config/partners.js';
-import { getRuntimeConfig } from '#src/config/index.js';
 import { getLoginPopup } from '#src/factories/loginRegistry.js';
 import { storageStatePath } from '#src/config/storageState.js';
+import { playerPath } from '#src/config/players.js';
+import { registerPlayer } from '#src/api/registerApi.js';
 import { LOGGED_IN_MARKERS } from '#src/config/authMarkers.js';
 
 /**
@@ -43,12 +50,21 @@ export function defineAuthSetup(device) {
       test(
         `LOGIN [00] REAL E2E login · ${partner.displayName} [${envName}] · ${device}`,
         async ({ page }) => {
-          const { baseURL, creds } = getRuntimeConfig(partnerId, envName, device);
+          const baseURL = partner.envs[envName].baseURL;
+
+          // Fresh player per run/device, created through the B2B Registration
+          // API. Throwing here fails the setup test, which in turn skips every
+          // e2e project that depends on it.
+          const player = await registerPlayer({ partnerId: partner.id, envName, device });
+          await writeFile(
+            playerPath(envName, partner.id, device),
+            JSON.stringify(player, null, 2),
+          );
 
           const login = getLoginPopup(page, partnerId);
           await page.goto(baseURL, { waitUntil: 'domcontentloaded' });
           await login.open();
-          await login.login(creds.username, creds.password);
+          await login.login(player.username, player.password);
           await login.expectLoggedIn();
           // Confirm the session is really authenticated before persisting it.
           await expect(page.locator(marker)).toBeVisible();

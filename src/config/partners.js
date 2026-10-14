@@ -21,6 +21,7 @@
 /** @type {Record<string, Partner>} */
 export const PARTNERS = {
   totogaming: {
+    CentrivoId: 2,
     id: 'totogaming',
     displayName: 'TotoGaming',
     server: 'totogaming',
@@ -29,10 +30,10 @@ export const PARTNERS = {
         baseURL: 'https://totogaming.tst-digi.com/',
         credsEnvPrefix: 'TOTOGAMING',
       },
-      prod: {
-        baseURL: 'https://totogaming.am/',
-        credsEnvPrefix: 'TOTOGAMING',
-      },
+      // prod: {
+      //   baseURL: 'https://totogaming.am/',
+      //   credsEnvPrefix: 'TOTOGAMING',
+      // },
     },
     features: { casino: true, betting: true, inbox: true },
     cashierNew: false,
@@ -65,10 +66,10 @@ export const PARTNERS = {
         baseURL: 'https://cozbet.tst-digi.com/',
         credsEnvPrefix: 'COZBET_TEST',
       },
-      prod: {
-        baseURL: 'https://cozbet002.com/en',
-        credsEnvPrefix: 'COZBET_SHARED',
-      },
+      // prod: {
+      //   baseURL: 'https://cozbet002.com/en',
+      //   credsEnvPrefix: 'COZBET_SHARED',
+      // },
     },
     features: { casino: true, betting: true, inbox: true },
     cashierNew: false,

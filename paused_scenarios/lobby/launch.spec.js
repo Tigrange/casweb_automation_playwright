@@ -18,11 +18,11 @@
 // (project.metadata.authDevice), so desktop and mobile each reuse their own
 // session — no login is performed here.
 
-import { test, expect } from '../../../src/fixtures/base.js';
-import { getLobbyPage } from '../../../src/factories/lobbyRegistry.js';
-import { getRuntimeConfig } from '../../../src/config/index.js';
-import { storageStatePath } from '../../../src/config/storageState.js';
-import { buildLobbyData } from '../../data/lobbyData.js';
+import { test, expect } from '../../src/fixtures/base.js';
+import { getLobbyPage } from '../../src/factories/lobbyRegistry.js';
+import { getRuntimeConfig } from '../../src/config/index.js';
+import { storageStatePath } from '../../src/config/storageState.js';
+import { buildLobbyData } from '../../tests/data/lobbyData.js';
 
 const { envName, partnerId, partner, baseURL } = getRuntimeConfig();
 const lobbyData = buildLobbyData(partnerId);
@@ -39,7 +39,7 @@ test.describe('LOBBY [01]: game launch availability', () => {
 
   /** @type {import('@playwright/test').BrowserContext} */
   let context;
-  /** @type {import('../../../src/pages/lobby/LobbyGamesLaunchOldPage.js').LobbyGamesLaunchOldPage | import('../../../src/pages/lobby/LobbyGamesLaunchNewPage.js').LobbyGamesLaunchNewPage} */
+  /** @type {import('../../src/pages/lobby/LobbyGamesLaunchOldPage.js').LobbyGamesLaunchOldPage | import('../../src/pages/lobby/LobbyGamesLaunchNewPage.js').LobbyGamesLaunchNewPage} */
   let lobby;
   /** @type {{provider: string, error: string}[]} */
   const incidents = [];

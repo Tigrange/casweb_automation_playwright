@@ -16,3 +16,6 @@ node_modules/
 
 # Captured auth state (contains session cookies)
 /tests/support/storageState/*.json
+
+# Freshly registered players (contains generated credentials)
+/tests/support/players/*.json
