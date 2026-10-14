@@ -40,6 +40,7 @@ export const PARTNERS = {
     lobbyNew: false,
   },
   totoro: {
+    centrivoId: 1210,
     id: 'totoro',
     displayName: 'totoro',
     sever: 'totoro',
@@ -58,6 +59,7 @@ export const PARTNERS = {
     lobbyNew: false,
   },
   cozbet: {
+    cozbetId: 116,
     id: 'cozbet',
     displayName: 'Cozbet',
     server: 'shared',
@@ -76,6 +78,7 @@ export const PARTNERS = {
     lobbyNew: true,
   },
   betfa: {
+    centrivoId: 1028,
     id: 'betfa',
     displayName: 'Betfa',
     server: 'albatross',
