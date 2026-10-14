@@ -21,7 +21,7 @@
 /** @type {Record<string, Partner>} */
 export const PARTNERS = {
   totogaming: {
-    CentrivoId: 2,
+    centrivoId: 2,
     id: 'totogaming',
     displayName: 'TotoGaming',
     server: 'totogaming',
@@ -59,7 +59,7 @@ export const PARTNERS = {
     lobbyNew: false,
   },
   cozbet: {
-    cozbetId: 116,
+    centrivoId: 116,
     id: 'cozbet',
     displayName: 'Cozbet',
     server: 'shared',
