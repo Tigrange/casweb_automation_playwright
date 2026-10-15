@@ -12,25 +12,19 @@
 //
 // TWO MODES
 // ---------
-//  1. PHASE MODE (used by the login runner). The caller supplies `phases`, e.g.
-//       desktop: [auth-desktop, e2e-chromium, e2e-firefox, e2e-webkit]
-//       mobile:  [auth-mobile,  e2e-mobile-chromium]
-//     For ONE partner the phases run SEQUENTIALLY in separate Playwright
-//     processes (desktop first, then mobile). This is required because the
-//     partner account allows only one active session: a mobile login can
-//     invalidate the desktop session and vice versa. Different partners run
-//     CONCURRENTLY (a pool of `--parallel`, default 2) because they use
-//     different accounts.
+//  1. PHASE MODE (used by the login runner and any auth-dependent feature). The
+//     caller supplies `phases`. The login feature now uses a SINGLE combined
+//     phase, so one Playwright process per partner runs the whole chain:
+//       auth-desktop + auth-mobile + e2e-chromium + e2e-mobile-chromium
+//     Each device registers its OWN fresh player (B2B Registration API), so the
+//     old single-session constraint is gone and desktop/mobile run in parallel
+//     inside that one process (project `dependencies` enforce auth-before-e2e).
+//     Different partners run CONCURRENTLY (a pool of `--parallel`, default 2)
+//     because they use different accounts.
 //
-//     One process per phase means the phase's auth project runs exactly ONCE
-//     and its browser projects reuse that single login:
-//       desktop process -> 1 real desktop login -> Chromium/Firefox/WebKit reuse
-//       mobile  process -> 1 real mobile  login -> mobile Chromium reuses
-//     => 2 real logins per partner (never one login per browser).
-//
-//  2. PROJECT MODE (used by the register runner, unchanged). No `phases` are
-//     supplied, so it keeps the original behaviour: one Playwright process per
-//     partner x project, sequentially.
+//  2. PROJECT MODE (used by the register runner). No `phases` are supplied, so
+//     each project runs in its own Playwright process per partner. Partners also
+//     run CONCURRENTLY up to `--parallel` (register is auth-independent).
 //
 // ARTIFACTS & COMBINED REPORT
 // ---------------------------
@@ -60,7 +54,7 @@
 //   --env=<name>                target environment (default: prod)
 //   --type=positive|negative|all   test type filter (default: positive)
 //   --tag=smoke|regression      optional suite tag (intersects the type)
-//   --parallel=<n>              partner concurrency in phase mode (default: 2)
+//   --parallel=<n>              partner concurrency, both modes (default: 2)
 //   --workers=<n>               Playwright workers per process (default: config)
 //   --projects=a,b,c            limit projects (mapped into phases in phase mode)
 //   --project=<name>            singular alias for --projects
@@ -103,8 +97,8 @@ const DEFAULT_PROJECTS = [
   'e2e-webkit'
 ];
 
-// Default partner concurrency in PHASE MODE. Deliberately conservative: the
-// machine has limited free RAM and browser processes are memory-heavy.
+// Default partner concurrency. Deliberately conservative: the machine has
+// limited free RAM and browser processes are memory-heavy.
 const DEFAULT_PARALLEL = 2;
 
 // Artifact paths are FEATURE-SCOPED (see scripts/lib/artifacts.js): each runner
@@ -239,13 +233,14 @@ export async function runAllPartners({ spec, label, phases, defaultProjects, noD
   if (phases) {
     units = phases
       .map((phase) => {
-        // Canonical order; optionally filtered by --projects. The phase's auth
-        // project is always kept when any of its projects is selected, so we
-        // never run a session-check without its login.
+        // Canonical order; optionally filtered by --projects. When the phase
+        // declares its auth project(s), keep those too when any of the phase's
+        // projects is selected, so we never run a session-check without its
+        // login.
         let selected = phase.projects;
         if (projectsArg) {
           selected = phase.projects.filter((p) => projectsArg.includes(p));
-          if (selected.length && !selected.includes(phase.auth)) {
+          if (phase.auth && selected.length && !selected.includes(phase.auth)) {
             selected = phase.projects.filter((p) => selected.includes(p) || p === phase.auth);
           }
         }
@@ -327,10 +322,12 @@ export async function runAllPartners({ spec, label, phases, defaultProjects, noD
     return records;
   }
 
-  // Run partners. In PHASE MODE they run concurrently up to `parallel`; in
-  // PROJECT MODE they run one at a time (original behaviour).
+  // Run partners, concurrently up to `parallel` in BOTH modes. Each partner is
+  // an independent process (per-partner storage state/players), so partners
+  // never interfere; browser-level parallelism within a process is governed by
+  // `--workers`.
   const runs = [];
-  const concurrency = phases ? parallel : 1;
+  const concurrency = parallel;
   await runPool(partners, concurrency, async (partnerId) => {
     const records = await runPartner(partnerId);
     runs.push(...records);

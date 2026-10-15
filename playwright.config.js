@@ -132,11 +132,14 @@ export default defineConfig({
      * `grep: TEST_GREP` applies the positive/negative + tag filter here only
      * (positive-only by default; see TEST_TYPE above). `metadata.authDevice`
      * tells the session-check tests which storage-state file to load.
+     * `grepInvert` drops tests tagged `@mobile-only` (mirror of
+     * e2e-mobile-chromium's `@desktop-only` exclusion).
      */
     {
       name: 'e2e-chromium',
       testIgnore: [/support[\\/]setup\.(desktop|mobile)\.spec\.js/, /auth[\\/]register\.spec\.js/, /visual[\\/]/ ],
       grep: TEST_GREP,
+      grepInvert: /@mobile-only/,
       metadata: { authDevice: 'desktop' },
       use: { ...devices['Desktop Chrome'] },
       dependencies: ['auth-desktop'],
@@ -161,11 +164,18 @@ export default defineConfig({
     /**
      * Mobile template (Pixel 5 Android). Depends on the mobile auth project and
      * reuses the mobile storage state.
+     *
+     * `grepInvert` drops tests tagged `@desktop-only` from the mobile run, so a
+     * test can be desktop-only (tagged in its spec) without any device checks in
+     * the test body. It combines with `grep` (type/tag filter). Tag a spec with
+     * `@mobile-only` and add the mirror here if a mobile-only test is ever
+     * needed.
      */
     {
       name: 'e2e-mobile-chromium',
       testIgnore: [/support[\\/]setup\.(desktop|mobile)\.spec\.js/, /auth[\\/]register\.spec\.js/, /visual[\\/]/, /storageState/],
       grep: TEST_GREP,
+      grepInvert: /@desktop-only/,
       metadata: { authDevice: 'mobile' },
       use: { ...devices['Pixel 5'] },
       dependencies: ['auth-mobile'],

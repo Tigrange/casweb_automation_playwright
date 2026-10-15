@@ -17,7 +17,7 @@ import { getRegisterPopup } from '#src/factories/registerRegistry.js';
 import { getRuntimeConfig } from '#src/config/index.js';
 import { buildRegisterData } from '#data/registerData.js';
 
-const { partnerId } = getRuntimeConfig();
+const { partnerId, partner } = getRuntimeConfig();
 const VALID = buildRegisterData(partnerId);
 
 /** Navigate home, open the register dialog for the active partner, return it. */
@@ -30,7 +30,7 @@ async function openRegister(page) {
 
 
 test(
-  'REGISTER [01]: Only Step 1: continue activates with valid Step 1 data and is gated by Turnstile',
+  `REGISTER [01]: Only Step 1: continue activates with valid Step 1 data and is gated by Turnstile · ${partner.displayName}`,
   { tag: ['@positive', '@regression'] },
   async ({ page }) => {
     const register = await openRegister(page);

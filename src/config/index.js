@@ -1,6 +1,6 @@
 // Central runtime configuration. Resolves the target partner + environment
-// and surfaces resolved credentials. Use this everywhere instead of reaching
-// into process.env directly.
+// (and, when present, the optional .env credentials). Use this everywhere
+// instead of reaching into process.env directly.
 
 import { loadEnv } from './env.js';
 import { PARTNERS, listPartners } from './partners.js';
@@ -11,12 +11,11 @@ import { PARTNERS, listPartners } from './partners.js';
  * @param {string} [partnerId] defaults to process.env.PARTNER || 'totogaming'
  * @param {string} [envName]   defaults to process.env.PLAYWRIGHT_ENV || 'prod'
  * @param {'desktop'|'mobile'} [device] defaults to 'desktop'. Mobile can use a
- *   separate account via <PREFIX>_<ENV>_USERNAME_MOBILE / _PASSWORD_MOBILE
- *   (needed when the platform enforces a single session per account); when those
- *   are not set it falls back to the shared credentials.
- * @returns {{ envName: string, partnerId: string, partner: object, device: string, baseURL: string, creds: {username: string, password: string} }}
- * @throws when the partner is unknown, the requested environment is not
- *   configured for that partner, or its credentials are missing.
+ *   separate account via <PREFIX>_<ENV>_USERNAME_MOBILE / _PASSWORD_MOBILE;
+ *   when those are not set it falls back to the shared credentials.
+ * @returns {{ envName: string, partnerId: string, partner: object, device: string, baseURL: string, creds: {username: string, password: string}|null }}
+ * @throws when the partner is unknown or the requested environment is not
+ *   configured for that partner.
  */
 export function getRuntimeConfig(partnerId = process.env.PARTNER || 'totogaming', envName = process.env.PLAYWRIGHT_ENV || 'prod', device = 'desktop') {
   loadEnv(envName);
@@ -42,9 +41,12 @@ export function getRuntimeConfig(partnerId = process.env.PARTNER || 'totogaming'
   const prefix = env.credsEnvPrefix;
   const upperEnv = envName.toUpperCase();
 
-  // Devices may log in with separate accounts (single-session platforms). A
-  // mobile-specific <PREFIX>_<ENV>_USERNAME_MOBILE / _PASSWORD_MOBILE wins when
-  // present; otherwise both devices share the standard account.
+  // Credentials are OPTIONAL. The auth/e2e suites register fresh players via the
+  // B2B Registration API (src/api/registerApi.js) and never log in with these
+  // accounts; the .env accounts are reserved for future Betting tests, which
+  // must validate creds themselves and fail loudly where they actually use them.
+  // A mobile-specific <PREFIX>_<ENV>_USERNAME_MOBILE / _PASSWORD_MOBILE wins
+  // when present; otherwise both devices share the standard account.
   const deviceSpecific = device === 'mobile';
   const username =
     (deviceSpecific && process.env[`${prefix}_${upperEnv}_USERNAME_MOBILE`]) ||
@@ -53,17 +55,14 @@ export function getRuntimeConfig(partnerId = process.env.PARTNER || 'totogaming'
     (deviceSpecific && process.env[`${prefix}_${upperEnv}_PASSWORD_MOBILE`]) ||
     process.env[`${prefix}_${upperEnv}_PASSWORD`];
 
-  if (!username || !password) {
-    const mobileHint = deviceSpecific
-      ? ` (or ${prefix}_${upperEnv}_USERNAME_MOBILE / _PASSWORD_MOBILE for the mobile account)`
-      : '';
-    throw new Error(
-      `Missing credentials for ${partner.id} [${envName}]. ` +
-        `Set ${prefix}_${upperEnv}_USERNAME and ${prefix}_${upperEnv}_PASSWORD${mobileHint} in .env`,
-    );
-  }
-
-  return { envName, partnerId, partner, device, baseURL: env.baseURL, creds: { username, password } };
+  return {
+    envName,
+    partnerId,
+    partner,
+    device,
+    baseURL: env.baseURL,
+    creds: username && password ? { username, password } : null,
+  };
 }
 
 export { PARTNERS, listPartners } from './partners.js';

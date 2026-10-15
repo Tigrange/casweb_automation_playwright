@@ -18,30 +18,26 @@
 //
 // Run one with:   node scripts/run-feature.js <feature> [partners...] [flags]
 
-// Shared PHASE MODE config for features that need an authenticated session.
+// Shared E2E phase for features that need an authenticated session.
 //
-// A partner account allows only ONE active session, so desktop and mobile run
-// as two SEQUENTIAL phases (each a single Playwright process): the phase's auth
-// project performs ONE real login and its browser projects reuse that session.
-//   desktop: auth-desktop (1 login) -> e2e-chromium
-//   mobile:  auth-mobile  (1 login) -> e2e-mobile-chromium
-const AUTH_PHASES = [
+// Each run registers a FRESH player per device via the B2B Registration API
+// (tests/support/authSetup.js), so desktop and mobile no longer share one
+// account session. That removes the old single-session constraint, and the
+// whole chain runs in ONE Playwright process per partner:
+//   auth-desktop + auth-mobile register their own players (in parallel),
+//   then e2e-chromium / e2e-mobile-chromium start as soon as their own auth
+//   project finishes (project `dependencies` in playwright.config.js enforce
+//   the ordering). Partners run concurrently via `--parallel`.
+const E2E_PHASE = [
   {
-    name: 'desktop',
-    auth: 'auth-desktop',
+    name: 'e2e',
     projects: [
       'auth-desktop',
-      'e2e-chromium',
-      // 'e2e-firefox',
-      // 'e2e-webkit'
-    ],
-  },
-  {
-    name: 'mobile',
-    auth: 'auth-mobile',
-    projects: [
       'auth-mobile',
+      'e2e-chromium',
       'e2e-mobile-chromium',
+      // 'e2e-firefox',
+      // 'e2e-webkit',
     ],
   },
 ];
@@ -51,7 +47,7 @@ export const FEATURES = {
   login: {
     spec: 'tests/scenarios/auth/login.spec.js',
     label: 'login',
-    phases: AUTH_PHASES,
+    phases: E2E_PHASE,
     enabled: true,
   },
 
@@ -60,16 +56,16 @@ export const FEATURES = {
     label: 'register',
     defaultProjects: ['register-chromium', 'register-mobile-chromium'],
     noDeps: true,
-    enabled: false, // TODO enable when register flow is verified end-to-end
+    enabled: true, // TODO enable when register flow is verified end-to-end
   },
 
   // Deposit/cashier scaffolding. Available on demand; not part of the default
   // suite yet (see SUITE below) until the flow is verified end-to-end.
   cashier: {
-    spec: 'tests/paused_scenarios/cashier/deposit.spec.js',
+    spec: 'tests/scenarios/cashier/deposit.spec.js',
     label: 'cashier',
-    phases: AUTH_PHASES,
-    enabled: false,
+    phases: E2E_PHASE,
+    enabled: true,
   },
 
   // Lobby game-launch. Available on demand; not part of the default suite yet
@@ -77,8 +73,20 @@ export const FEATURES = {
   lobby: {
     spec: 'tests/paused_scenarios/lobby/launch.spec.js',
     label: 'lobby',
-    phases: AUTH_PHASES,
+    phases: E2E_PHASE,
     enabled: false,
+  },
+  changepassword: {
+    spec: 'tests/scenarios/change_password/change_password.spec.js',
+    label: 'change-password',
+    phases: E2E_PHASE,
+    enabled: true,
+  },
+  dummy: {
+    spec: 'tests/scenarios/dummy_lobby_page/dummy_lobby_page.spec.js',
+    label: 'dummy_tests',
+    phases: E2E_PHASE,
+    enabled: true,
   },
 };
 
@@ -89,7 +97,7 @@ export const FEATURES = {
  *
  * A feature listed here is still SKIPPED when its `enabled` flag is false.
  */
-export const SUITE = ['register', 'login','cashier'];
+export const SUITE = ['register', 'login','cashier', 'lobby', 'changepassword', 'dummy'];
 
 /**
  * The suite's features, in order, minus the disabled ones.

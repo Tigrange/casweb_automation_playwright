@@ -8,6 +8,7 @@ import { randomString, randomEmail, randomPassword } from '#src/utils/helpers.js
 /** Values valid for all partners. */
 const COMMON = {
   password: randomPassword(12),
+  currency: 'USD',
 };
 
 /**
@@ -20,6 +21,12 @@ const BY_PARTNER = {
     email: randomEmail('testuser'),
     mobile: `9${randomString(7, '0123456789')}`,
     currency: 'AMD',
+  }),
+  cozbet: () => ({
+    username: `testuser_${randomString(8)}`,
+    email: randomEmail('testuser', 'cozbet.com'),
+    mobile: `9${randomString(7, '0123456789')}`,
+    currency: 'USD',
   }),
   betfa: () => ({
     firstName: `Test${randomString(4)}`,

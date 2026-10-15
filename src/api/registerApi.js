@@ -5,10 +5,10 @@
 // Contract (verified against the platform's curl):
 //   POST ${TEST_API_URL}
 //   Authorization: ${B2B_AUTH}      (raw token, NO "Bearer" prefix)
-//   PartnerId:     <partner.CentrivoId>
+//   PartnerId:     <partner.centrivoId>
 //
 // The payload is the platform's Client/Register body. Partner-specific static
-// values (CentrivoId) come from src/config/partners.js; per-partner dynamic
+// values (centrivoId) come from src/config/partners.js; per-partner dynamic
 // identity values (username, email, mobile, currency, password) come from
 // tests/data/registerData.js so a new partner only adds an entry there. The
 // remaining constants below are verbatim from the platform's own request.
@@ -120,7 +120,7 @@ export function buildRegisterPayload(partnerId, partner, data) {
     DocumentNumber: data.username,
     CurrencyId: data.currency,
     Password: data.password,
-    PartnerId: partner.CentrivoId,
+    PartnerId: partner.centrivoId,
     FirstName: marker,
     LastName: marker,
   };
@@ -149,8 +149,8 @@ export async function registerPlayer({ partnerId, envName, device }) {
 
   const partner = PARTNERS[partnerId];
   if (!partner) throw new Error(`Unknown partner "${partnerId}" for the registration API.`);
-  if (partner.CentrivoId === undefined) {
-    throw new Error(`Partner "${partnerId}" has no CentrivoId configured in src/config/partners.js.`);
+  if (partner.centrivoId === undefined) {
+    throw new Error(`Partner "${partnerId}" has no centrivoId configured in src/config/partners.js.`);
   }
 
   const data = buildRegisterData(partnerId);
@@ -164,7 +164,7 @@ export async function registerPlayer({ partnerId, envName, device }) {
       'accept-language': 'en',
       TimeZone: '4',
       Authorization: token,
-      PartnerId: String(partner.CentrivoId),
+      PartnerId: String(partner.centrivoId),
     },
     body: JSON.stringify(payload),
   });
@@ -180,6 +180,20 @@ export async function registerPlayer({ partnerId, envName, device }) {
   if (!res.ok) {
     throw new Error(
       `Registration API failed for ${partnerId} [${envName}] (${res.status} ${res.statusText}): ${raw}`,
+    );
+  }
+
+  // The API signals logical failures with HTTP 200 + a non-zero ResponseCode
+  // (e.g. {"ResponseCode":-1,"ErrorObject":[{"Message":"WrongCurrencyId"}]}).
+  // Treat that as a hard failure so the setup test fails and dependent projects
+  // are skipped — never proceed to log in with a player that was not created.
+  if (response && typeof response.ResponseCode === 'number' && response.ResponseCode !== 0) {
+    const detail = Array.isArray(response.ErrorObject)
+      ? response.ErrorObject.map((e) => e.Message ?? JSON.stringify(e)).join('; ')
+      : JSON.stringify(response.ErrorObject);
+    throw new Error(
+      `Registration API rejected the player for ${partnerId} [${envName}] ` +
+        `(ResponseCode ${response.ResponseCode}): ${detail || raw}`,
     );
   }
 
