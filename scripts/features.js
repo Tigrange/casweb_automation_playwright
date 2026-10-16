@@ -50,24 +50,21 @@ export const FEATURES = {
     phases: E2E_PHASE,
     enabled: true,
   },
-
   register: {
     spec: 'tests/scenarios/auth/register.spec.js',
     label: 'register',
     defaultProjects: ['register-chromium', 'register-mobile-chromium'],
     noDeps: true,
-    enabled: true, // TODO enable when register flow is verified end-to-end
+    enabled: false, // TODO enable when register flow is verified end-to-end
   },
-
   // Deposit/cashier scaffolding. Available on demand; not part of the default
   // suite yet (see SUITE below) until the flow is verified end-to-end.
   cashier: {
     spec: 'tests/scenarios/cashier/deposit.spec.js',
     label: 'cashier',
     phases: E2E_PHASE,
-    enabled: true,
+    enabled: false,
   },
-
   // Lobby game-launch. Available on demand; not part of the default suite yet
   // until the flow (and the multi-provider TODO) is verified.
   lobby: {

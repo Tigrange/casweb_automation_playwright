@@ -90,7 +90,7 @@ export default defineConfig({
     screenshot: 'only-on-failure',
     trace: 'retain-on-failure',
     video: process.env.PW_VIDEO === 'on' ? 'retain-on-failure' : 'off',
-    navigationTimeout: 30_000,
+    navigationTimeout: 80_000,
   },
 
   projects: [

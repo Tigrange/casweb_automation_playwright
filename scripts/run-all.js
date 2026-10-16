@@ -8,10 +8,11 @@
 // A feature with `enabled: false` in features.js is skipped by the suite (but can
 // still be run on its own via scripts/run-feature.js).
 //
-// FAILURE POLICY (fail-fast, documented in README): if a feature fails, the
-// remaining features are NOT started and the process exits non-zero. This is
-// purely an orchestration decision; it does not change test dependencies. If a
-// feature passes, the next one runs and the final exit code is the process's.
+// FAILURE POLICY (continue-on-failure): every feature in the suite is started
+// even if an earlier one failed, so one broken feature no longer hides the rest
+// of the suite. This is purely an orchestration decision; it does not change
+// test dependencies. The process exits non-zero if ANY feature failed, and a
+// summary of the failing features is printed at the end.
 //
 // Artifacts stay isolated per feature (see scripts/lib/artifacts.js), so runners
 // never touch each other's blobs/reports.
@@ -58,20 +59,28 @@ console.log(
     (disabled.length ? `  (skipping disabled: ${disabled.join(', ')})` : ''),
 );
 
+const failures = [];
+
 for (let i = 0; i < suite.length; i += 1) {
   const featureId = suite[i];
   const status = runFeature(featureId);
 
   if (status !== 0) {
-    const remaining = suite.slice(i + 1);
-    if (remaining.length) {
-      console.error(
-        `\n${featureId.toUpperCase()} failed (exit ${status}); ` +
-          `skipping ${remaining.map((id) => id.toUpperCase()).join(', ')} (fail-fast).`,
-      );
-    }
-    process.exit(status);
+    failures.push({ featureId, status });
+    console.error(
+      `\n${featureId.toUpperCase()} failed (exit ${status}); ` +
+        `continuing with the remaining features (continue-on-failure).`,
+    );
   }
 }
 
+if (failures.length) {
+  console.error(
+    `\nSuite finished with ${failures.length} failing feature(s): ` +
+      failures.map(({ featureId, status }) => `${featureId.toUpperCase()} (exit ${status})`).join(', '),
+  );
+  process.exit(1);
+}
+
+console.log('\nSuite finished: all features passed.');
 process.exit(0);

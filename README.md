@@ -47,7 +47,9 @@ Features are declared in `scripts/features.js` and run through ONE generic runne
   `dependencies` enforce the order). Register is **auth-free** (no login, no
   storageState).
 - `scripts/run-all.js` — top-level orchestrator. Runs the `SUITE` order from
-  `scripts/features.js` (currently Register → Login), fail-fast.
+  `scripts/features.js` (currently Register → Login) continue-on-failure: a
+  failing feature no longer stops the rest, and the process exits non-zero with
+  a summary of the failing features.
 
 Both `run-feature.js` and `run-all.js` run **partners concurrently** up to
 `--parallel=<n>` (default 2). Inside each partner process, browser-level
@@ -112,7 +114,7 @@ tests/
 scripts/
   features.js   feature registry (spec/label/phases/projects)
   run-feature.js  generic per-feature runner
-  run-all.js    full-suite orchestrator (SUITE order, fail-fast)
+  run-all.js    full-suite orchestrator (SUITE order, continue-on-failure)
   lib/          runAllPartners.js (engine), artifacts.js (feature paths)
 playwright.config.js
 ```
@@ -219,7 +221,7 @@ node scripts/run-feature.js login totogaming cozbet --env=test --parallel=3 --wo
 # register is auth-free and runs partners in parallel too
 node scripts/run-feature.js register totogaming cozbet --env=test --parallel=2
 
-# full suite (SUITE order, fail-fast)
+# full suite (SUITE order, continue-on-failure)
 node scripts/run-all.js totogaming cozbet --env=test --parallel=2 --workers=2
 # or the npm shortcut
 npm run test:suite
