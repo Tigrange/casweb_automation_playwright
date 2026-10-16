@@ -10,7 +10,7 @@
 //   label           short feature name used in headers/summary/artifacts
 //   phases          PHASE MODE units (auth-sequenced); omit for PROJECT MODE
 //   defaultProjects PROJECT MODE projects (else runAllPartners' shared default)
-//   noDeps          pass --no-deps (skip project deps), e.g. register
+//   noDeps          pass --no-deps (skip project deps), e.g. register,if auth is not needed
 //   enabled         include this feature in the full suite (run-all.js).
 //                   Defaults to true when omitted. Set `enabled: false` to skip
 //                   the feature in the suite WITHOUT removing its config;
@@ -64,6 +64,7 @@ export const FEATURES = {
     label: 'cashier',
     phases: E2E_PHASE,
     enabled: false,
+    noDeps: true
   },
   // Lobby game-launch. Available on demand; not part of the default suite yet
   // until the flow (and the multi-provider TODO) is verified.
@@ -72,18 +73,21 @@ export const FEATURES = {
     label: 'lobby',
     phases: E2E_PHASE,
     enabled: false,
+    noDeps: true
   },
   changepassword: {
     spec: 'tests/scenarios/change_password/change_password.spec.js',
     label: 'change-password',
     phases: E2E_PHASE,
     enabled: true,
+    noDeps: true
   },
   dummy: {
     spec: 'tests/scenarios/dummy_lobby_page/dummy_lobby_page.spec.js',
     label: 'dummy_tests',
     phases: E2E_PHASE,
-    enabled: true,
+    enabled: false,
+    noDeps: true
   },
 };
 
