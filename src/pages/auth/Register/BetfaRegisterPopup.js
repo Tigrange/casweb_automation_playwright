@@ -1,7 +1,7 @@
 import { RegisterPopup } from './RegisterPopup.js';
-import { automationSelector } from '../../utils/automation.js';
+import { automationSelector } from '../../../utils/automation.js';
 
-export class TotoRoRegisterPopup extends RegisterPopup {
+export class BetfaRegisterPopup extends RegisterPopup {
   get selectors() {
     return {
       // Header trigger that opens the registration dialog.
@@ -13,7 +13,6 @@ export class TotoRoRegisterPopup extends RegisterPopup {
         desktop: "#js_reg_form",
         mobile: '#js_reg_form',//missing mobile selector for login form
       },
-      username: { desktop: '#UserName', mobile: '#UserName' },
       email: { desktop: '#Email', mobile: '#Email' },
       mobileCode: { desktop: '#MobileCode', mobile: '#MobileCode' },
       mobile: { desktop: '#Mobile', mobile: '#Mobile' },
@@ -42,13 +41,14 @@ export class TotoRoRegisterPopup extends RegisterPopup {
   }
 
   /**
-   * TotoRo Step 1 collects userName
+   * Betfa Step 1 collects name + date of birth instead of a username.
    * @param {Record<string, string>} data
    */
-  async fillStep1(data) {
-    await this.fillIdentity(data);
-    await this.fillField('mobile', data.mobile);
-    await this.fillField('password', data.password);
-    await this.fillField('passwordValidation', data.passwordValidation);
+  async fillIdentity(data) {
+    await this.fillField('firstName', data.firstName);
+    await this.fillField('lastName', data.lastName);
+    await this.select2('dobDay', data.dobDay);
+    await this.select2('dobMonth', data.dobMonth);
+    await this.select2('dobYear', data.dobYear);
   }
 }

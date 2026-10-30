@@ -101,7 +101,7 @@ that feature. Register and Login reports are separate.
 src/
   api/          registerApi.js (B2B Registration API client)
   config/       partners.js, env.js, index.js, storageState.js, players.js, testFilters.js, authMarkers.js
-  pages/        BasePage + auth/LoginPopup, RegisterPopup, Betfa* popups
+  pages/        BasePage + auth/Login/ and auth/Register/ popups
   factories/    loginRegistry.js, registerRegistry.js (partner -> popup class)
   fixtures/     base.js (test + runtime fixture)
   utils/        automation.js, device.js, helpers.js

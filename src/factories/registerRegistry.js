@@ -6,9 +6,9 @@
 // Betfa: first/last name + date of birth, no username) register a subclass
 // here keyed by partner id.
 
-import { RegisterPopup } from '../pages/auth/RegisterPopup.js';
-import { BetfaRegisterPopup } from '../pages/auth/BetfaRegisterPopup.js';
-import { TotoRoRegisterPopup } from '../pages/auth/TotoRoRegisterPopup.js'; 
+import { RegisterPopup } from '../pages/auth/Register/RegisterPopup.js';
+import { BetfaRegisterPopup } from '../pages/auth/Register/BetfaRegisterPopup.js';
+import { TotoRoRegisterPopup } from '../pages/auth/Register/TotoRoRegisterPopup.js'; 
 
 /** Partner-id → register page-object class. Absent ids resolve to RegisterPopup. */
 const REGISTER_POPUPS = {

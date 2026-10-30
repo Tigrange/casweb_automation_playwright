@@ -14,8 +14,8 @@
 // NOT attempt to solve/bypass it. It covers field interaction and validation
 // up to (but not including) the final submit.
 
-import BasePage from '../BasePage.js';
-import { automationSelector } from '../../utils/automation.js';
+import BasePage from '../../BasePage.js';
+import { automationSelector } from '../../../utils/automation.js';
 
 export class RegisterPopup extends BasePage {
   /** Per-screen selector map. Selects use native HTML ids (no `automation`). */

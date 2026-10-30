@@ -28,7 +28,7 @@ export const PARTNERS = {
     envs: {
       test: {
         baseURL: 'https://totogaming.tst-digi.com/',
-        credsEnvPrefix: 'TOTOGAMING',
+        credsEnvPrefix: 'TOTOGAMING_TST',
       },
       // prod: {
       //   baseURL: 'https://totogaming.am/',
@@ -47,7 +47,7 @@ export const PARTNERS = {
     envs: {
       // test: {
       //   baseURL: 'https://totoro.tst-digi.com/',
-      //   credsEnvPrefix: 'TOTOGAMINGRO',
+      //   credsEnvPrefix: 'TOTOGAMINGRO_TST',
       // },
       prod: {
         baseURL: 'https://totogaming.ro/en',
@@ -85,13 +85,32 @@ export const PARTNERS = {
     envs: {
       prod: {
         baseURL: 'https://betfa.com/',
-        credsEnvPrefix: 'BETFA',
+        credsEnvPrefix: 'BETFA_TST',
       },
     },
     features: { casino: true, betting: true, inbox: true },
     cashierNew: false,
     lobbyNew: false,
   },
+  manoto: {
+    centrivoId: 1047,
+    id: 'manoto',
+    displayName: 'Manoto',
+    server: 'manoto',
+    envs: {
+      test: {
+        baseURL: 'https://manotobet.tst-digi.com/',
+        credsEnvPrefix: 'MANOTO_TST',
+      },
+      // prod: {
+      //   baseURL: 'https://manotobet.com/',
+      //   credsEnvPrefix: 'MANOTO',
+      // },
+    },
+    features: { casino: true, betting: true, inbox: true },
+    cashierNew: false,
+    lobbyNew: false,
+  }
 };
 
 /** @returns {string[]} all registered partner ids */

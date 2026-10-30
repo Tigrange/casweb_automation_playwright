@@ -1,7 +1,7 @@
 import { LoginPopup } from './LoginPopup.js';
-import { automationSelector } from '../../utils/automation.js';
+import { automationSelector } from '../../../utils/automation.js';
 
-export class BetfaLoginPopup extends LoginPopup {
+export class ManotoLoginPopup extends LoginPopup {
   get selectors() {
     return {
       loginTrigger: {

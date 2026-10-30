@@ -13,8 +13,8 @@
 //   password_input      password input
 //   login_button        submit button (type="button")
 
-import BasePage from '../BasePage.js';
-import { automationSelector } from '../../utils/automation.js';
+import BasePage from '../../BasePage.js';
+import { automationSelector } from '../../../utils/automation.js';
 
 export class LoginPopup extends BasePage {
   /** Device-aware selectors per semantic name. */

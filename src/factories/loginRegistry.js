@@ -10,7 +10,7 @@
 //
 // Example:
 //
-//   import { LoginPopup } from '../pages/auth/LoginPopup.js';
+//   import { LoginPopup } from '../pages/auth/Login/LoginPopup.js';
 //   class TotoroLoginPopup extends LoginPopup {
 //     get selectors() {
 //       return {
@@ -25,14 +25,16 @@
 //   }
 //   const LOGIN_POPUPS = { totoro: TotoroLoginPopup };
 
-import { LoginPopup } from '../pages/auth/LoginPopup.js';
-import { BetfaLoginPopup } from '../pages/auth/BetfaLoginPopup.js';
-import { CozbetLoginPopup } from '../pages/auth/CozbetLoginPopup.js'; 
+import { LoginPopup } from '../pages/auth/Login/LoginPopup.js';
+import { BetfaLoginPopup } from '../pages/auth/Login/BetfaLoginPopup.js';
+import { CozbetLoginPopup } from '../pages/auth/Login/CozbetLoginPopup.js'; 
+import { ManotoLoginPopup } from '../pages/auth/Login/ManotoLoginPopup.js';
 
 /** Partner-id → login page-object class. Absent ids resolve to LoginPopup. */
 const LOGIN_POPUPS = {
   betfa: BetfaLoginPopup, // Betfa uses the same login flow as TotoGaming
   cozbet: CozbetLoginPopup, // Cozbet has a unique login flow
+  manoto: ManotoLoginPopup // Manoto uses the default login flow
 };
 
 /**
