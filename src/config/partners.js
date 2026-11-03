@@ -45,14 +45,14 @@ export const PARTNERS = {
     displayName: 'totoro',
     sever: 'totoro',
     envs: {
-      // test: {
-      //   baseURL: 'https://totoro.tst-digi.com/',
-      //   credsEnvPrefix: 'TOTOGAMINGRO_TST',
-      // },
-      prod: {
-        baseURL: 'https://totogaming.ro/en',
-        credsEnvPrefix: 'TOTOGAMINGRO',
+      test: {
+        baseURL: 'https://totoro.tst-digi.com/',
+        credsEnvPrefix: 'TOTOGAMINGRO_TST',
       },
+      // prod: {
+      //   baseURL: 'https://totogaming.ro/en',
+      //   credsEnvPrefix: 'TOTOGAMINGRO',
+      // },
     },
     features: { casino: true, betting: true, inbox: true },
     cashierNew: true,
@@ -83,10 +83,14 @@ export const PARTNERS = {
     displayName: 'Betfa',
     server: 'albatross',
     envs: {
-      prod: {
-        baseURL: 'https://betfa.com/',
+      test: {
+        baseURL: 'https://betfa.tst-digi.com/',
         credsEnvPrefix: 'BETFA_TST',
       },
+      // prod: {
+      //   baseURL: 'https://betfa.com/',
+      //   credsEnvPrefix: 'BETFA_TST',
+      // },
     },
     features: { casino: true, betting: true, inbox: true },
     cashierNew: false,

@@ -17,10 +17,12 @@
 
 import { ChangePasswordPage } from '../pages/change_password/ChangePasswordPage.js';
 import { CozbetChangePasswordPage } from '../pages/change_password/CozbetChangePasswordPage.js';
+import { ManotoChangePasswordPage } from '../pages/change_password/ManotoChangePasswordPage.js';
 
 /** Partner-id → change-password page-object class. Absent ids use the default. */
 const CHANGE_PASSWORD_PAGES = {
   cozbet: CozbetChangePasswordPage,
+  manoto: ManotoChangePasswordPage,
 };
 
 /**

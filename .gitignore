@@ -8,6 +8,7 @@ node_modules/
 /artifacts/
 /playwright/.cache/
 /playwright/.auth/
+/.playwright-mcp/
 
 # Secrets — never commit real credentials
 .env

@@ -1,5 +1,6 @@
 import { LoginPopup } from './LoginPopup.js';
 import { automationSelector } from '../../../utils/automation.js';
+import { ManotoHomePage } from '../../home/ManotoHomePage.js';
 
 export class ManotoLoginPopup extends LoginPopup {
   get selectors() {
@@ -9,20 +10,28 @@ export class ManotoLoginPopup extends LoginPopup {
         mobile: '#js_mob_sign_in',
       },
       container: {
-        desktop: automationSelector('login_form'),
-        mobile: '#staticLogin',
+        desktop: '#loginCont',
+        mobile: '#sidebar-login',
       },
       username: { desktop: automationSelector('email_input'), mobile: automationSelector('email_input') },
       password: { desktop: automationSelector('password_input'), mobile: automationSelector('password_input') },
-      submit: { desktop: automationSelector('login_button'), mobile: '#staticLoginButton' },
-      errorMessage: { desktop: '#loginerrormessage', mobile: '#loginerrormessage' }, //ONLY THIS IS DIFFERENT FROM LoginPopup.js
+      submit: { desktop: automationSelector('login_button'), mobile: automationSelector('login_button') },
+      errorMessage: { desktop: '#loginError', mobile: '#loginerrormessage' }, //ONLY THIS IS DIFFERENT FROM LoginPopup.js
       depositTrigger: {
         desktop: automationSelector('deposit_main_button'),
-        mobile: '.cw_headerDropDown_mob_depositBtn', // TODO verify mobile trigger
+        mobile: '#depositDropDownToggler', // TODO verify mobile trigger
       },
     };
   }
 
-
+  /**
+   * Manoto serves the desktop version by default, even for a mobile viewport.
+   * Force the version that matches this project's device before the
+   * device-specific selectors are used.
+   */
+  async open() {
+    await new ManotoHomePage(this.page).ensureVersion(this.device);
+    await this.openTrigger.evaluate((el) => el.click());
+    await this.container.waitFor({ state: 'visible' });
+  }
 }
-

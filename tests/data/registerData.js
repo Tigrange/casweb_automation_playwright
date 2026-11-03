@@ -49,6 +49,19 @@ const BY_PARTNER = {
     email: randomEmail('testuser', 'totoro.com'),
     mobile: `7${randomString(8, '0123456789')}`,
     currency: 'RON',
+    SocialCardNumber: `7${randomString(8, '0123456789')}`,
+  }),
+  manoto: () => ({
+    password: 'Admin123!',
+    username: `testuser_${randomString(8)}`,
+    firstName: `Test${randomString(4)}`,
+    lastName: `User${randomString(4)}`,
+    dobDay: '1',
+    dobMonth: '1',
+    dobYear: '1990',
+    email: randomEmail('testuser', 'manoto.com'),
+    mobile: `7${randomString(8, '0123456789')}`,
+    currency: 'USD',
   })
 };
 

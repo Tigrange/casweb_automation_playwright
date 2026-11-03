@@ -25,7 +25,7 @@
     "test:totogaming:cozbet": "node scripts/run-feature.js totogaming cozbet --workers=2",
 
 
-    "test:suite": "node scripts/run-all.js --parallel=2 --workers=2"
+    "test:suite": "node scripts/run-all.js --env=test --parallel=2 --workers=2"
   },
   "keywords": [],
   "author": "",
