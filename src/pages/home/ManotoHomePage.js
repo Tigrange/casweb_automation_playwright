@@ -13,7 +13,7 @@ import { expect } from '@playwright/test';
 import BasePage from '../BasePage.js';
 
 /** Switching reloads the site through a slow redirect — allow extra time. */
-const SWITCH_TIMEOUT = 30000;
+const SWITCH_TIMEOUT = 60000;
 
 export class ManotoHomePage extends BasePage {
   // NOTE: `this.device` (set by BasePage from the viewport) is NOT the served

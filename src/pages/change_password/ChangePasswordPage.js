@@ -38,7 +38,7 @@ export class ChangePasswordPage extends BasePage {
       },
       changeMenuItem: {
         desktop: '.passwchangeDialog',
-        mobile: '.rm_changepass',
+        mobile: '.rm_changepass, #js_changepass_rm',
       },
       currentPassword: {
         desktop: '#OldPassword',
@@ -83,13 +83,13 @@ export class ChangePasswordPage extends BasePage {
 
   /**
    * Open the change-password form from the logged-in header.
-   * The username menu entry is dynamic (the player's own username), so it is
-   * resolved by text rather than a static selector.
+   * Uses programmatic clicks: partners show cookie-consent banners and
+   * promo popups that intercept pointer events, so a real click can hang.
    * @param {string} username the logged-in player's username
    */
   async open() {
-    await this.accountMenuTrigger.click();
-    await this.changeMenuItem.click();
+    await this.accountMenuTrigger.evaluate((el) => el.click());
+    await this.changeMenuItem.evaluate((el) => el.click());
     await this.changePasswordForm.waitFor({ state: 'visible' });
   }
 
@@ -104,7 +104,8 @@ export class ChangePasswordPage extends BasePage {
     await this.currentPasswordInput.fill(current);
     await this.newPasswordInput.fill(next);
     await this.confirmPasswordInput.fill(confirm);
-    await this.submitButton.click();
+    // Programmatic submit for the same overlay reason as open().
+    await this.submitButton.evaluate((el) => el.click());
   }
 
   /** Wait until the success confirmation is shown. */

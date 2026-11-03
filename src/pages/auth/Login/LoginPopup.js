@@ -72,7 +72,9 @@ export class LoginPopup extends BasePage {
   async login(username, password) {
     await this.usernameInput.fill(username);
     await this.passwordInput.fill(password);
-    await this.submitButton.click();
+    // Programmatic submit: partner pages show cookie-consent banners and promo
+    // popups that can intercept a real pointer click on the submit button.
+    await this.submitButton.evaluate((el) => el.click());
   }
 
   /** Wait until the login dialog closes — i.e. login succeeded. */
