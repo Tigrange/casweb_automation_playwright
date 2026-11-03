@@ -120,9 +120,11 @@ export function buildRegisterPayload(partnerId, partner, data) {
     DocumentNumber: data.username,
     CurrencyId: data.currency,
     Password: data.password,
+    IsEmailVerified: data.isEmailVerified ?? false,
     PartnerId: partner.centrivoId,
     FirstName: marker,
     LastName: marker,
+    ...(data.SocialCardNumber ? { SocialCardNumber: data.SocialCardNumber } : {}),
   };
 }
 

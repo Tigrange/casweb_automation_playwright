@@ -4,6 +4,7 @@
 // merges the two, with partner values taking precedence.
 
 import { randomString, randomEmail, randomPassword } from '#src/utils/helpers.js';
+import { generateCnp } from '#src/utils/cnp.js';
 
 /** Values valid for all partners. */
 const COMMON = {
@@ -31,6 +32,7 @@ const BY_PARTNER = {
   betfa: () => ({
     firstName: `Test${randomString(4)}`,
     lastName: `User${randomString(4)}`,
+    username: `testuser_${randomString(8)}`,
     dobDay: '1',
     dobMonth: '1',
     dobYear: '1990',
@@ -49,7 +51,10 @@ const BY_PARTNER = {
     email: randomEmail('testuser', 'totoro.com'),
     mobile: `7${randomString(8, '0123456789')}`,
     currency: 'RON',
-    SocialCardNumber: `7${randomString(8, '0123456789')}`,
+    SocialCardNumber: generateCnp({ year: 1990, month: 1, day: 1 }),
+    // TotoRo blocks login until the account email is verified; create the
+    // automation player pre-verified instead of waiting for the activation mail.
+    isEmailVerified: true,
   }),
   manoto: () => ({
     password: 'Admin123!',
