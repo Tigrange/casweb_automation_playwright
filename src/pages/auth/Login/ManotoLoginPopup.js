@@ -5,6 +5,7 @@ import { ManotoHomePage } from '../../home/ManotoHomePage.js';
 export class ManotoLoginPopup extends LoginPopup {
   get selectors() {
     return {
+      ...super.selectors,
       loginTrigger: {
         desktop: automationSelector('home_login_button'),
         mobile: '#js_mob_sign_in',

@@ -4,6 +4,7 @@ import { automationSelector } from '../../../utils/automation.js';
 export class BetfaRegisterPopup extends RegisterPopup {
   get selectors() {
     return {
+      ...super.selectors,
       // Header trigger that opens the registration dialog.
       openTrigger: {
         desktop: automationSelector('open_register'),
