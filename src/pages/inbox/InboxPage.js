@@ -124,18 +124,24 @@ export class InboxPage extends BasePage {
     expect(createdAt, `unparsable inbox date: "${dateText}"`).not.toBeNull();
     expect(Math.abs(Date.now() - createdAt.getTime())).toBeLessThanOrEqual(CREATED_AT_TOLERANCE_MS);
 
-    await row.locator('.js_subject_detail').first().evaluate((el) => el.click());
-    await expect(this.detailArea).toContainText(subject);
-    await expect(this.detailArea).toContainText(message);
-    if (attachmentName) {
-      await expect(this.detailArea).toContainText(attachmentName);
-    }
+    // Opening a message is JS-driven and can race with the send refresh: retry
+    // the click (row = read action, subject = expand) with the checks together.
+    await expect(async () => {
+      await row.evaluate((el) => el.click()).catch(() => {});
+      await row.locator('.js_subject_detail').first().evaluate((el) => el.click()).catch(() => {});
+      await expect(this.detailArea).toContainText(subject);
+      await expect(this.detailArea).toContainText(message);
+      if (attachmentName) {
+        await expect(this.detailArea).toContainText(attachmentName);
+      }
+    }).toPass({ timeout: 20000 });
   }
 
   /** Delete the message with the given subject. */
   async deleteMessage(subject) {
     const item = this.items.filter({ hasText: subject }).first();
     await item.locator('.js_delete_msg').first().evaluate((el) => el.click());
+    await expect(this.items.filter({ hasText: subject })).toHaveCount(0);
   }
 }
 
