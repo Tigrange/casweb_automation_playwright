@@ -82,6 +82,13 @@ export const FEATURES = {
     enabled: true,
     noDeps: true
   },
+  inbox: {
+    spec: 'tests/scenarios/inbox/inbox.spec.js',
+    label: 'inbox',
+    phases: E2E_PHASE,
+    enabled: true,
+    noDeps: true
+  },
   dummy: {
     spec: 'tests/scenarios/dummy_lobby_page/dummy_lobby_page.spec.js',
     label: 'dummy_tests',

@@ -1,0 +1,69 @@
+// Inbox tests.
+//
+//   INBOX [01]  inbox flow -> opens the inbox for the logged-in player.
+//                              If the partner's inbox exposes the send composer
+//                              (admin-configurable), it sends a message with an
+//                              attachment, verifies it appears, then deletes it
+//                              and verifies it is gone. Otherwise it only
+//                              asserts that the inbox opened successfully.
+//
+// Reuses the authenticated storage state captured by the auth setup (never logs
+// in), resolved per project device exactly like the login/change-password specs.
+
+import { writeFile, unlink } from 'node:fs/promises';
+import { join } from 'node:path';
+import { tmpdir } from 'node:os';
+import { test } from '#src/fixtures/base.js';
+import { getInboxPage } from '#src/factories/inboxRegistry.js';
+import { getRuntimeConfig } from '#src/config/index.js';
+import { storageStatePath } from '#src/config/storageState.js';
+
+const { envName, partnerId, partner } = getRuntimeConfig();
+
+/** Resolve the device from the active project's metadata. */
+function deviceOf(testInfo) {
+  return testInfo.project.metadata.authDevice ?? 'desktop';
+}
+
+test.use({
+  storageState: async ({}, use, testInfo) => {
+    await use(storageStatePath(envName, partnerId, deviceOf(testInfo)));
+  },
+});
+
+test.describe('INBOX [01]: inbox message flow', () => {
+  test(
+    `INBOX [01] inbox flow · ${partner.displayName}`,
+    { tag: ['@positive', '@smoke'] },
+    async ({ runtime, page }) => {
+      const inbox = getInboxPage(page, runtime.partnerId);
+      await page.goto(runtime.baseURL, { waitUntil: 'domcontentloaded' });
+
+      await inbox.open();
+
+      if (!(await inbox.isSendAvailable())) {
+        // Send is not enabled for this partner from the admin side: opening the
+        // inbox successfully is the whole covered behaviour.
+        return;
+      }
+
+      const subject = `Automation inbox ${Date.now()}`;
+      const message = 'Hello from automation';
+      // The inbox upload accepts images only (.png/.jpg/.jpeg), so use a tiny
+      // valid PNG instead of a .txt file.
+      const attachmentPath = join(tmpdir(), `inbox-attachment-${Date.now()}.png`);
+      const png = Buffer.from(
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
+        'base64',
+      );
+      await writeFile(attachmentPath, png);
+
+      try {
+        await inbox.createMessage({ subject, message, attachmentPath });
+        await inbox.deleteMessage(subject);
+      } finally {
+        await unlink(attachmentPath).catch(() => {});
+      }
+    },
+  );
+});
