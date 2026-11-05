@@ -10,15 +10,17 @@
 // Reuses the authenticated storage state captured by the auth setup (never logs
 // in), resolved per project device exactly like the login/change-password specs.
 
-import { writeFile, unlink } from 'node:fs/promises';
 import { join } from 'node:path';
-import { tmpdir } from 'node:os';
 import { test } from '#src/fixtures/base.js';
 import { getInboxPage } from '#src/factories/inboxRegistry.js';
 import { getRuntimeConfig } from '#src/config/index.js';
 import { storageStatePath } from '#src/config/storageState.js';
 
 const { envName, partnerId, partner } = getRuntimeConfig();
+
+/** Shared PNG fixture (1x1) â€” the inbox uploader accepts images only. */
+const ATTACHMENT_PATH = join(process.cwd(), 'tests', 'data', 'fixtures', 'inbox-attachment.png');
+const ATTACHMENT_NAME = 'inbox-attachment.png';
 
 /** Resolve the device from the active project's metadata. */
 function deviceOf(testInfo) {
@@ -33,7 +35,7 @@ test.use({
 
 test.describe('INBOX [01]: inbox message flow', () => {
   test(
-    `INBOX [01] inbox flow · ${partner.displayName}`,
+    `INBOX [01] inbox flow - ${partner.displayName}`,
     { tag: ['@positive', '@smoke'] },
     async ({ runtime, page }) => {
       const inbox = getInboxPage(page, runtime.partnerId);
@@ -49,21 +51,10 @@ test.describe('INBOX [01]: inbox message flow', () => {
 
       const subject = `Automation inbox ${Date.now()}`;
       const message = 'Hello from automation';
-      // The inbox upload accepts images only (.png/.jpg/.jpeg), so use a tiny
-      // valid PNG instead of a .txt file.
-      const attachmentPath = join(tmpdir(), `inbox-attachment-${Date.now()}.png`);
-      const png = Buffer.from(
-        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
-        'base64',
-      );
-      await writeFile(attachmentPath, png);
 
-      try {
-        await inbox.createMessage({ subject, message, attachmentPath });
-        await inbox.deleteMessage(subject);
-      } finally {
-        await unlink(attachmentPath).catch(() => {});
-      }
+      await inbox.createMessage({ subject, message, attachmentPath: ATTACHMENT_PATH });
+      await inbox.expectMessageCreated({ subject, message, attachmentName: ATTACHMENT_NAME });
+      await inbox.deleteMessage(subject);
     },
   );
 });

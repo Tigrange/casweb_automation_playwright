@@ -10,6 +10,25 @@
 import { expect } from '@playwright/test';
 import { BasePage } from '../BasePage.js';
 
+/** Date tolerance for "added date is correct" (+/- 20 minutes). */
+const CREATED_AT_TOLERANCE_MS = 20 * 60 * 1000;
+
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+/**
+ * Parse the inbox date format "04 Nov, 2026 17:37" into a Date.
+ * @param {string} text
+ * @returns {Date|null}
+ */
+function parseSiteDate(text) {
+  const match = /(\d{1,2})\s+([A-Za-z]{3}),?\s+(\d{4})\s+(\d{1,2}):(\d{2})/.exec(String(text || '').trim());
+  if (!match) return null;
+  const month = MONTHS.indexOf(match[2].slice(0, 1).toUpperCase() + match[2].slice(1, 3).toLowerCase());
+  if (month === -1) return null;
+  const [, day, , year, hour, minute] = match;
+  return new Date(Number(year), month, Number(day), Number(hour), Number(minute), 0);
+}
+
 export class InboxPage extends BasePage {
   get selectors() {
     return {
@@ -32,6 +51,10 @@ export class InboxPage extends BasePage {
       send: { desktop: '#send_btn', mobile: '#send_btn' },
       items: { desktop: '.js_msg_item', mobile: '.js_msg_item' },
       deleteIcon: { desktop: '.js_delete_msg', mobile: '.js_delete_msg' },
+      messageSubject: { desktop: '.js_subject_detail', mobile: '.js_subject_detail' },
+      messageDate: { desktop: '.js_last_update_time', mobile: '.js_last_update_time' },
+      // Detail pane (composer when composing, message body when a row is opened).
+      detailArea: { desktop: '#msg_cont', mobile: '#msg_cont' },
     };
   }
 
@@ -47,6 +70,9 @@ export class InboxPage extends BasePage {
     this.sendButton = this.sel('send').first();
     this.items = this.sel('items');
     this.deleteIcon = this.sel('deleteIcon');
+    this.messageSubject = this.sel('messageSubject');
+    this.messageDate = this.sel('messageDate');
+    this.detailArea = this.sel('detailArea').first();
   }
 
   /** Open the inbox: click the header trigger when present, else go to the page. */
@@ -75,6 +101,35 @@ export class InboxPage extends BasePage {
       await this.fileInput.setInputFiles(attachmentPath);
     }
     await this.sendButton.evaluate((el) => el.click());
+  }
+
+  /**
+   * Assert the created message.
+   * Desktop: the new row in #js_msgs_cont shows the subject and an added date
+   * within +/- 20 minutes; the detail pane (#msg_cont) then shows subject,
+   * description and attachment file name.
+   * Mobile: only that a new row was added to #js_msgs_cont.
+   *
+   * @param {{ subject: string, message: string, attachmentName?: string }} params
+   */
+  async expectMessageCreated({ subject, message, attachmentName }) {
+    const row = this.items.filter({ hasText: subject }).first();
+    await expect(row).toBeVisible();
+
+    if (this.device === 'mobile') return;
+
+    await expect(row).toContainText(subject);
+    const dateText = await row.locator('.js_last_update_time').first().innerText();
+    const createdAt = parseSiteDate(dateText);
+    expect(createdAt, `unparsable inbox date: "${dateText}"`).not.toBeNull();
+    expect(Math.abs(Date.now() - createdAt.getTime())).toBeLessThanOrEqual(CREATED_AT_TOLERANCE_MS);
+
+    await row.locator('.js_subject_detail').first().evaluate((el) => el.click());
+    await expect(this.detailArea).toContainText(subject);
+    await expect(this.detailArea).toContainText(message);
+    if (attachmentName) {
+      await expect(this.detailArea).toContainText(attachmentName);
+    }
   }
 
   /** Delete the message with the given subject. */
