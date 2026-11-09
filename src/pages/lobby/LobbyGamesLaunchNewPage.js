@@ -1,62 +1,132 @@
-// New lobby game-launch page object. Used by partners whose game launch is
-// served by the new lobby — totoro (see `lobbyNew` in src/config/partners.js).
+// Widget-based "new" lobby game-launch page object (design 2).
 //
-// The new lobby is a self-contained launcher. As with the new cashier, we only
-// assert that the launch UI OPENS: an internal "something went wrong"/provider
-// error is a partner-side issue and still counts as a PASS — the integration
-// from our side works as long as the launch container is displayed.
+// Used by partners whose casino lobby is the widget lobby
+// (`#js_filter_button` + `#js_wbp_filter`) — cozbet (see `lobbyNew` in
+// src/config/partners.js).
 //
-// TODO: eventually launch games across MULTIPLE providers (>5), filtering per
-// provider first. Deferred for now.
+// Flow (PROD-SAFE — launches a game only, never places a bet):
+//   1. open(data)              — navigate to the widget lobby (data.lobbyUrl).
+//   2. selectProvider(provider)— open the filter, switch to the Providers tab,
+//                                pick the provider, then apply.
+//   3. launchGame(game)         — launcher in the sibling class: find the
+//                                specific game card, play it and assert the
+//                                game iframe opened.
 //
-// Selectors follow the dev-team `automation` attribute convention. The lobby DOM
-// has not been captured yet: every key below is a best-effort placeholder and
-// MUST be verified against a live desktop/mobile DOM before trusting it.
+// Verified against TotoGaming TST (`/lobby/testslots`, 2026-11-05):
+//   filter button   #js_filter_button
+//   filter popup    #js_wbp_filter
+//   providers tab   #js_filter_tab_provider_button
+//   provider item   .js_wbp_filter_providers[data-unique-url="pragmatic"]
+//   apply           #js_wbp_filter_show_all_games
+//   games grid      #js_wbp_games_grid
+//   game card       .js_dl_games_cont[data-game-id="17661"]
+//   play            .js_dl_play
 
-import BasePage from '../BasePage.js';
-import { automationSelector } from '../../utils/automation.js';
+import { expect } from '@playwright/test';
+import { LobbyGamesLaunchPage } from './LobbyGamesLaunchPage.js';
 
-export class LobbyGamesLaunchNewPage extends BasePage {
-  /** Device-aware selectors per semantic name. */
+export class LobbyGamesLaunchNewPage extends LobbyGamesLaunchPage {
+  /** Device-aware selectors per semantic name (new-lobby extras). */
   get selectors() {
     return {
-      // Home-page entry point that opens the casino lobby.
-      lobbyTrigger: {
-        desktop: automationSelector('casino_main_button'), // TODO verify
-        mobile: automationSelector('casino_main_button'), // TODO verify
+      ...super.selectors,
+      // Filter popup that narrows the widget lobby by provider.
+      filterButton: {
+        desktop: '#js_filter_button',
+        mobile: '#js_filter_button', // TODO verify mobile
       },
-      // Launch container/iframe that must become visible after open().
-      launchContainer: {
-        desktop: automationSelector('game_launch'), // TODO verify
-        mobile: automationSelector('game_launch'), // TODO verify
+      filterPopup: {
+        desktop: '#js_wbp_filter',
+        mobile: '#js_wbp_filter', // TODO verify mobile
+      },
+      providerTab: {
+        desktop: '#js_filter_tab_provider_button',
+        mobile: '#js_filter_tab_provider_button', // TODO verify mobile
+      },
+      providerItem: {
+        desktop: '.js_wbp_filter_providers',
+        mobile: '.js_wbp_filter_providers', // TODO verify mobile
+      },
+      applyFilter: {
+        desktop: '#js_wbp_filter_show_all_games',
+        mobile: '#js_wbp_filter_show_all_games', // TODO verify mobile
+      },
+      // Widget grid that replaces the legacy #js_games_lobby.
+      gamesGrid: {
+        desktop: '#js_wbp_games_grid',
+        mobile: '#js_wbp_games_grid', // TODO verify mobile
       },
     };
   }
 
   constructor(page) {
     super(page);
-    this.launchContainer = this.sel('launchContainer');
-    this.openTrigger = this.sel('lobbyTrigger').first();
+    this.filterButton = this.page.locator(this.selectors.filterButton[this.device]).first();
+    this.filterPopup = this.page.locator(this.selectors.filterPopup[this.device]);
+    this.providerTab = this.page.locator(this.selectors.providerTab[this.device]).first();
+    this.providerItem = this.page.locator(this.selectors.providerItem[this.device]);
+    this.applyFilter = this.page.locator(this.selectors.applyFilter[this.device]).first();
+    this.gamesGrid = this.page.locator(this.selectors.gamesGrid[this.device]);
   }
 
   /**
-   * Open the game launcher from the home page. Uses a programmatic click for the
-   * same reason as the login/register popups (duplicate cloned header triggers).
-   */
-  async open() {
-    await this.openTrigger.evaluate((el) => el.click());
-  }
-
-  /**
-   * Assert the launch UI opened. Intentionally does NOT inspect its contents:
-   * an in-container provider error is a partner-side problem, not ours.
+   * Open the widget lobby. The widget lobby is a standalone page, so it is
+   * reached directly through `data.lobbyUrl` resolved against the current
+   * origin (the page is expected to be on the partner site already).
    *
-   * @param {{ providers?: string[], maxGames?: number }} [data] reserved for the
-   *   multi-provider TODO.
+   * @param {{ lobbyUrl?: string }} [data]
    */
-  async launchGame(data = {}) {
-    void data;
-    await this.launchContainer.waitFor({ state: 'visible' });
+  async open(data = {}) {
+    if (!data.lobbyUrl) {
+      throw new Error('The new lobby requires `lobbyUrl` in the partner lobby data');
+    }
+    await this.page.goto(new URL(data.lobbyUrl, this.page.url()).href, {
+      waitUntil: 'domcontentloaded',
+    });
+    await this.filterButton.waitFor({ state: 'visible' });
+  }
+
+  /** Open the filter popup on the Providers tab. */
+  async openProviderFilter() {
+    await this.filterButton.click();
+    await this.filterPopup.waitFor({ state: 'visible' });
+    await this.providerTab.click();
+  }
+
+  /** Apply the currently selected provider/themes and wait for the grid. */
+  async applyProviderFilter() {
+    await this.applyFilter.click();
+    await expect(this.filterPopup).toBeHidden();
+    await this.gamesGrid.waitFor({ state: 'visible' });
+  }
+
+  /** Clear any active provider filter so the next provider starts from "all". */
+  async resetProviderFilter() {
+    await this.openProviderFilter();
+    const allItem = this.page
+      .locator(`${this.selectors.providerItem[this.device]}[data-unique-url="all"]`)
+      .first();
+    if (await allItem.count()) {
+      await allItem.click();
+      await this.applyProviderFilter();
+    }
+  }
+
+  /**
+   * Apply a provider filter through the widget filter popup.
+   * @param {{ name?: string, filter: string }} provider
+   */
+  async selectProvider(provider) {
+    await this.openProviderFilter();
+
+    const item = this.page
+      .locator(`${this.selectors.providerItem[this.device]}[data-unique-url="${provider.filter}"]`)
+      .first();
+    await item.waitFor({ state: 'visible' });
+    await item.click();
+    await expect(item).toHaveClass(/active/);
+
+    await this.applyProviderFilter();
   }
 }
 

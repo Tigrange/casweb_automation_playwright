@@ -66,10 +66,13 @@ export const FEATURES = {
     enabled: false,
     noDeps: true
   },
-  // Lobby game-launch. Available on demand; not part of the default suite yet
-  // until the flow (and the multi-provider TODO) is verified.
+  // Lobby game-launch. Two scenario versions live side by side: legacy
+  // (launch.old.spec.js) and widget (launch.new.spec.js). Each partner runs
+  // only the scenario matching its `lobbyNew` design flag, so pointing at the
+  // directory still yields exactly ONE lobby scenario per partner.
+  // Enabled on demand; a verified player is required for the KYC gate.
   lobby: {
-    spec: 'tests/paused_scenarios/lobby/launch.spec.js',
+    spec: 'tests/scenarios/lobby',
     label: 'lobby',
     phases: E2E_PHASE,
     enabled: false,

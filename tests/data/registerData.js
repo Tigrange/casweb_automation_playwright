@@ -27,7 +27,7 @@ const BY_PARTNER = {
     username: `testuser_${randomString(8)}`,
     email: randomEmail('testuser', 'cozbet.com'),
     mobile: `9${randomString(7, '0123456789')}`,
-    currency: 'USD',
+    currency: 'USD'
   }),
   betfa: () => ({
     firstName: `Test${randomString(4)}`,
@@ -38,7 +38,7 @@ const BY_PARTNER = {
     dobYear: '1990',
     email: randomEmail('testuser', 'betfa.com'),
     mobile: `9${randomString(9, '0123456789')}`,
-    currency: 'USD',
+    currency: 'USD'
   }),
   totoro: () => ({
     password: 'Admin123!',
@@ -54,7 +54,7 @@ const BY_PARTNER = {
     SocialCardNumber: generateCnp({ year: 1990, month: 1, day: 1 }),
     // TotoRo blocks login until the account email is verified; create the
     // automation player pre-verified instead of waiting for the activation mail.
-    isEmailVerified: true,
+    isEmailVerified: true
   }),
   manoto: () => ({
     password: 'Admin123!',
@@ -66,7 +66,7 @@ const BY_PARTNER = {
     dobYear: '1990',
     email: randomEmail('testuser', 'manoto.com'),
     mobile: `7${randomString(8, '0123456789')}`,
-    currency: 'USD',
+    currency: 'USD'
   })
 };
 
