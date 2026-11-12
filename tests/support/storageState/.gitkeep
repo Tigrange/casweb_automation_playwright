@@ -1,2 +1,0 @@
-# Auth state is captured by the `setup` project and stored here as
-# <env>-<partner>.json. These files contain session cookies and are gitignored.

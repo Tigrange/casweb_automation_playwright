@@ -44,11 +44,23 @@ const E2E_PHASE = [
 
 /** Feature id → runAllPartners options. */
 export const FEATURES = {
+  // Auth setup: register ONE fresh player per device for the whole suite run and
+  // persist the session. Every auth-dependent feature below reuses it instead of
+  // re-registering per feature. Runs FIRST in the suite.
+  auth: {
+    spec: 'tests/support',
+    label: 'auth',
+    defaultProjects: ['auth-desktop', 'auth-mobile'],
+    noDeps: true,
+    enabled: true,
+  },
   login: {
     spec: 'tests/scenarios/auth/login.spec.js',
     label: 'login',
-    phases: E2E_PHASE,
+    // Reuses the session created by the `auth` feature (no per-feature auth).
+    phases: [{ name: 'e2e', projects: ['e2e-chromium', 'e2e-mobile-chromium'] }],
     enabled: true,
+    noDeps: true,
   },
   register: {
     spec: 'tests/scenarios/auth/register.spec.js',
@@ -70,27 +82,36 @@ export const FEATURES = {
   // (launch.old.spec.js) and widget (launch.new.spec.js). Each partner runs
   // only the scenario matching its `lobbyNew` design flag, so pointing at the
   // directory still yields exactly ONE lobby scenario per partner.
-  // Enabled on demand; a verified player is required for the KYC gate.
+  //
+  // While player verification is still being clarified with the dev team, the
+  // lobby feature logs in with the partner's hardcoded PLAYER credentials from
+  // .env (e.g. TOTOGAMING_PROD_USERNAME / _PASSWORD) instead of the fresh-player
+  // auth setup. Works for both --env=test and --env=prod. Hence: no auth phase
+  // + --no-deps. TODO: switch back to E2E_PHASE once verified players are
+  // produced by setup.
   lobby: {
     spec: 'tests/scenarios/lobby',
     label: 'lobby',
-    phases: E2E_PHASE,
+    phases: [{ name: 'e2e', projects: ['e2e-chromium'] }], // TODO: switch back to E2E_PHASE once verified players are produced by setup.
     enabled: false,
     noDeps: true
   },
   changepassword: {
     spec: 'tests/scenarios/change_password/change_password.spec.js',
     label: 'change-password',
-    phases: E2E_PHASE,
+    // Reuses the session created by the `auth` feature. Runs LAST: changing the
+    // password invalidates the shared session, so nothing may use it afterwards.
+    phases: [{ name: 'e2e', projects: ['e2e-chromium', 'e2e-mobile-chromium'] }],
     enabled: true,
-    noDeps: true
+    noDeps: true,
   },
   inbox: {
     spec: 'tests/scenarios/inbox/inbox.spec.js',
     label: 'inbox',
-    phases: E2E_PHASE,
+    // Reuses the session created by the `auth` feature (no per-feature auth).
+    phases: [{ name: 'e2e', projects: ['e2e-chromium', 'e2e-mobile-chromium'] }],
     enabled: true,
-    noDeps: true
+    noDeps: true,
   },
   dummy: {
     spec: 'tests/scenarios/dummy_lobby_page/dummy_lobby_page.spec.js',
@@ -108,7 +129,7 @@ export const FEATURES = {
  *
  * A feature listed here is still SKIPPED when its `enabled` flag is false.
  */
-export const SUITE = ['register', 'login','cashier', 'lobby', 'changepassword', 'dummy'];
+export const SUITE = ['auth', 'register', 'login', 'cashier', 'lobby', 'inbox', 'changepassword', 'dummy'];
 
 /**
  * The suite's features, in order, minus the disabled ones.

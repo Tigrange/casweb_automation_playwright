@@ -58,7 +58,6 @@ const STATIC_PAYLOAD = {
   SportClinetId: 0,
   SocialNetworkId: 0,
   ReferralId: 0,
-  CurrentURL: 'playintest.tst-digi.com',
   LineId: null,
   CpfNumber: null,
   DocumentType: 8,
@@ -71,7 +70,6 @@ const STATIC_PAYLOAD = {
   MigratedClientId: null,
   PasswordSalt: 0,
   BetshopId: null,
-  Domain: 'playintest.tst-digi.com',
   UserAgentString:
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
   PaymentCategoryId: null,
@@ -107,8 +105,16 @@ function datetimeStamp() {
   );
 }
 
-/** Build the full Client/Register payload for a partner. */
-export function buildRegisterPayload(partnerId, partner, data) {
+/**
+ * Build the full Client/Register payload for a partner.
+ *
+ * @param {string} partnerId
+ * @param {object} partner
+ * @param {object} data      per-partner identity data (tests/data/registerData.js)
+ * @param {string} domain    partner site hostname for the active environment
+ *                           (used for CurrentURL/Domain instead of a hardcoded host)
+ */
+export function buildRegisterPayload(partnerId, partner, data, domain) {
   const marker = `${PLAYER_NAME_PREFIX}-${datetimeStamp()}`;
   return {
     ...STATIC_PAYLOAD,
@@ -124,6 +130,9 @@ export function buildRegisterPayload(partnerId, partner, data) {
     PartnerId: partner.centrivoId,
     FirstName: marker,
     LastName: marker,
+    // Environment-specific site host (test vs prod).
+    CurrentURL: domain,
+    Domain: domain,
     ...(data.SocialCardNumber ? { SocialCardNumber: data.SocialCardNumber } : {}),
   };
 }
@@ -138,16 +147,41 @@ function registerEndpoint(baseUrl) {
 }
 
 /**
+ * Resolve the registration API URL + B2B token for an environment.
+ *   test → TEST_API_URL / B2B_AUTH
+ *   prod → PROD_API_URL / PROD_B2B_AUTH
+ * Each env can also override with <ENV>_API_URL / <ENV>_B2B_AUTH.
+ */
+function resolveApiCredentials(envName) {
+  const env = envName.toUpperCase();
+  const apiUrl =
+    process.env[`${env}_API_URL`] || (envName === 'test' ? process.env.TEST_API_URL : undefined);
+  const token =
+    process.env[`${env}_B2B_AUTH`] || (envName === 'test' ? process.env.B2B_AUTH : undefined);
+
+  if (!apiUrl) {
+    throw new Error(
+      `Missing ${env}_API_URL for the registration API (${envName}). ` +
+        `Set it in .env (e.g. PROD_API_URL for production).`,
+    );
+  }
+  if (!token) {
+    throw new Error(
+      `Missing ${env}_B2B_AUTH for the registration API (${envName}). ` +
+        `Set it in .env (e.g. PROD_B2B_AUTH for production).`,
+    );
+  }
+  return { apiUrl, token };
+}
+
+/**
  * Register a fresh player for the given partner/environment/device.
  *
  * @param {{ partnerId: string, envName: string, device: string }} params
  * @returns {Promise<{ username: string, password: string, partnerId: string, envName: string, device: string, response: any }>}
  */
 export async function registerPlayer({ partnerId, envName, device }) {
-  const apiUrl = process.env.TEST_API_URL;
-  const token = process.env.B2B_AUTH;
-  if (!apiUrl) throw new Error('Missing TEST_API_URL for the registration API.');
-  if (!token) throw new Error('Missing B2B_AUTH for the registration API.');
+  const { apiUrl, token } = resolveApiCredentials(envName);
 
   const partner = PARTNERS[partnerId];
   if (!partner) throw new Error(`Unknown partner "${partnerId}" for the registration API.`);
@@ -155,8 +189,16 @@ export async function registerPlayer({ partnerId, envName, device }) {
     throw new Error(`Partner "${partnerId}" has no centrivoId configured in src/config/partners.js.`);
   }
 
+  const partnerEnv = partner.envs?.[envName];
+  if (!partnerEnv?.baseURL) {
+    throw new Error(
+      `No baseURL for partner "${partnerId}" env "${envName}" (needed for registration).`,
+    );
+  }
+  const domain = new URL(partnerEnv.baseURL).hostname;
+
   const data = buildRegisterData(partnerId);
-  const payload = buildRegisterPayload(partnerId, partner, data);
+  const payload = buildRegisterPayload(partnerId, partner, data, domain);
 
   const res = await fetch(registerEndpoint(apiUrl), {
     method: 'POST',

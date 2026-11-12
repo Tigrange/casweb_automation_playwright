@@ -140,6 +140,9 @@ export default defineConfig({
       testIgnore: [/support[\\/]setup\.(desktop|mobile)\.spec\.js/, /auth[\\/]register\.spec\.js/, /visual[\\/]/ ],
       grep: TEST_GREP,
       grepInvert: /@mobile-only/,
+      // Production/lobby flows (and the lobby env-player login hook) can exceed
+      // the global 60s; give e2e the same headroom as the auth projects.
+      timeout: 120_000,
       metadata: { authDevice: 'desktop' },
       use: { ...devices['Desktop Chrome'] },
       dependencies: ['auth-desktop'],

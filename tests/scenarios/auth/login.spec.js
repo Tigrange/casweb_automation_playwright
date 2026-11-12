@@ -16,7 +16,7 @@
 import { test, expect } from '#src/fixtures/base.js';
 import { getLoginPopup } from '#src/factories/loginRegistry.js';
 import { getRuntimeConfig } from '#src/config/index.js';
-import { storageStatePath } from '#src/config/storageState.js';
+import { requireStorageStatePath } from '#src/config/storageState.js';
 import { LOGGED_IN_MARKERS } from '#src/config/authMarkers.js';
 import { deviceLocator } from '#src/utils/device.js';
 
@@ -29,7 +29,7 @@ test.describe('LOGIN [01]: session check (reused state)', () => {
   test.use({
     storageState: async ({}, use, testInfo) => {
       const device = testInfo.project.metadata.authDevice ?? 'desktop';
-      await use(storageStatePath(envName, partnerId, device));
+      await use(requireStorageStatePath(envName, partnerId, device));
     },
   });
 

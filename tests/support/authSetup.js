@@ -45,8 +45,19 @@ export function defineAuthSetup(device) {
     ? Object.entries(PARTNERS).filter(([id]) => id === selected)
     : Object.entries(PARTNERS);
 
+  // Also scope to the SELECTED ENVIRONMENT (PLAYWRIGHT_ENV). A partner can have
+  // both test+prod configured, but a run must only authenticate against the one
+  // requested (prod auth uses a different registration API and would otherwise
+  // run on --env=test too).
+  const selectedEnv = process.env.PLAYWRIGHT_ENV;
+
   for (const [partnerId, partner] of entries) {
-    for (const envName of Object.keys(partner.envs)) {
+    const envNames =
+      selectedEnv && partner.envs[selectedEnv]
+        ? [selectedEnv]
+        : Object.keys(partner.envs);
+
+    for (const envName of envNames) {
       test(
         `LOGIN [00] REAL E2E login · ${partner.displayName} [${envName}] · ${device}`,
         async ({ page }) => {

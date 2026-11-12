@@ -21,7 +21,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { test } from '#src/fixtures/base.js';
 import { getChangePasswordPage } from '#src/factories/changePasswordRegistry.js';
 import { getRuntimeConfig } from '#src/config/index.js';
-import { storageStatePath } from '#src/config/storageState.js';
+import { requireStorageStatePath } from '#src/config/storageState.js';
 import { playerPath } from '#src/config/players.js';
 
 const { envName, partnerId, partner } = getRuntimeConfig();
@@ -56,7 +56,7 @@ function nextPassword(current) {
 test.use({
   storageState: async ({}, use, testInfo) => {
     const device = deviceOf(testInfo);
-    await use(storageStatePath(envName, partnerId, device));
+    await use(requireStorageStatePath(envName, partnerId, device));
   },
 });
 

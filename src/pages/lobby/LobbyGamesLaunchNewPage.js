@@ -64,7 +64,6 @@ export class LobbyGamesLaunchNewPage extends LobbyGamesLaunchPage {
     this.filterButton = this.page.locator(this.selectors.filterButton[this.device]).first();
     this.filterPopup = this.page.locator(this.selectors.filterPopup[this.device]);
     this.providerTab = this.page.locator(this.selectors.providerTab[this.device]).first();
-    this.providerItem = this.page.locator(this.selectors.providerItem[this.device]);
     this.applyFilter = this.page.locator(this.selectors.applyFilter[this.device]).first();
     this.gamesGrid = this.page.locator(this.selectors.gamesGrid[this.device]);
   }
@@ -95,21 +94,18 @@ export class LobbyGamesLaunchNewPage extends LobbyGamesLaunchPage {
 
   /** Apply the currently selected provider/themes and wait for the grid. */
   async applyProviderFilter() {
+    // The filtered list is loaded via AJAX after applying; wait for it so the
+    // first card picked is from THIS provider.
+    const refresh = this.page
+      .waitForResponse((r) => /WidgetBasedPage\/(Filter|FilterGames)/i.test(r.url()), {
+        timeout: 15_000,
+      })
+      .catch(() => null);
     await this.applyFilter.click();
     await expect(this.filterPopup).toBeHidden();
+    await refresh;
     await this.gamesGrid.waitFor({ state: 'visible' });
-  }
-
-  /** Clear any active provider filter so the next provider starts from "all". */
-  async resetProviderFilter() {
-    await this.openProviderFilter();
-    const allItem = this.page
-      .locator(`${this.selectors.providerItem[this.device]}[data-unique-url="all"]`)
-      .first();
-    if (await allItem.count()) {
-      await allItem.click();
-      await this.applyProviderFilter();
-    }
+    await this.page.waitForTimeout(500);
   }
 
   /**
@@ -127,6 +123,41 @@ export class LobbyGamesLaunchNewPage extends LobbyGamesLaunchPage {
     await expect(item).toHaveClass(/active/);
 
     await this.applyProviderFilter();
+  }
+
+  /**
+   * Whether the provider exists in the widget filter. Used to SKIP providers
+   * that don't exist on the partner instead of failing.
+   * @param {{ filter: string }} provider
+   * @returns {Promise<boolean>}
+   */
+  async isProviderAvailable(provider) {
+    const item = this.page
+      .locator(`${this.selectors.providerItem[this.device]}[data-unique-url="${provider.filter}"]`)
+      .first();
+    if (!(await item.count())) return false;
+    return !(await item
+      .evaluate((el) => el.classList.contains('hidden') || el.hasAttribute('disabled'))
+      .catch(() => false));
+  }
+
+  /**
+   * Discover all providers in the widget filter (the popup exists in the DOM
+   * even while closed). Used by the all-providers sweep.
+   * @returns {Promise<{name: string, filter: string}[]>}
+   */
+  async listProviders() {
+    const items = this.page.locator(`${this.selectors.providerItem[this.device]}[data-unique-url]`);
+    const count = await items.count();
+    const providers = [];
+    for (let i = 0; i < count; i += 1) {
+      const item = items.nth(i);
+      const filter = await item.getAttribute('data-unique-url');
+      if (!filter || filter === 'all') continue;
+      const name = (await item.getAttribute('data-text')) || filter;
+      providers.push({ name, filter });
+    }
+    return providers;
   }
 }
 

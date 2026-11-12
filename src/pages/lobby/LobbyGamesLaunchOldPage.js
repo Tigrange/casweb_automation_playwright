@@ -29,68 +29,52 @@ export class LobbyGamesLaunchOldPage extends LobbyGamesLaunchPage {
   get selectors() {
     return {
       ...super.selectors,
-      // Header menu link that opens the slots lobby.
-      lobbyMenuLink: {
-        desktop: 'a.js_menu_links[href*="/lobby/slots/main"]',
-        mobile: 'a.js_menu_links[href*="/lobby/slots/main"]', // TODO verify mobile
-      },
       // Lobby wrapper + inner filter/root.
       lobbyWrapper: {
         desktop: '#js_lobby_main_wrapper',
         mobile: '#js_lobby_main_wrapper', // TODO verify mobile
       },
-      lobbyContainer: {
-        desktop: '#js_lobby_main',
-        mobile: '#js_lobby_main', // TODO verify mobile
-      },
-      // Provider chips carry the provider slug in `data-url`; `all` resets.
+      // Provider chips carry the provider slug in `data-url`.
       providerItem: {
         desktop: '.js_lobby_cats',
         mobile: '.js_lobby_cats', // TODO verify mobile
+      },
+      // "View all providers" control (prod collapses some providers).
+      providersViewAll: {
+        desktop: '#js_lobby_view_all_providers, .js_lobby_view_all_providers',
+        mobile: '#js_lobby_view_all_providers, .js_lobby_view_all_providers', // TODO verify mobile
+      },
+      // Provider chip logo (alt text = provider name).
+      providerImage: {
+        desktop: 'img',
+        mobile: 'img',
       },
     };
   }
 
   constructor(page) {
     super(page);
-    this.lobbyMenuLink = this.sel('lobbyMenuLink').first();
     this.lobbyWrapper = this.page.locator(this.selectors.lobbyWrapper[this.device]);
     this.gamesGrid = this.page.locator(this.selectors.gamesGrid[this.device]);
-    this.providerItem = this.page.locator(this.selectors.providerItem[this.device]);
   }
 
   /**
-   * Open the casino lobby from the home page.
-   * Uses a programmatic click for the same reason as the auth popups: the
-   * header is cloned on some partners and a real pointer click can be swallowed.
+   * Open the casino lobby directly from the configured lobby URL. Direct
+   * navigation is used because the lobby path/host differs per environment
+   * (test `/lobby/slots/main`, prod `/lobby/casino/main`).
    *
    * @param {{ lobbyUrl?: string }} [data]
    */
   async open(data = {}) {
-    if (data.lobbyUrl) {
-      const link = this.page.locator(`a.js_menu_links[href*="${data.lobbyUrl}"]`).first();
-      if (await link.count()) {
-        await link.evaluate((el) => el.click());
-      } else {
-        await this.page.goto(new URL(data.lobbyUrl, this.page.url()).href, {
-          waitUntil: 'domcontentloaded',
-        });
-      }
-    } else {
-      await this.lobbyMenuLink.evaluate((el) => el.click());
+    if (!data.lobbyUrl) {
+      throw new Error('The legacy lobby requires `lobbyUrl` in the partner lobby data');
     }
+    await this.page.goto(new URL(data.lobbyUrl, this.page.url()).href, {
+      waitUntil: 'domcontentloaded',
+    });
 
     await this.lobbyWrapper.waitFor({ state: 'visible' });
     await this.gamesGrid.waitFor({ state: 'attached' });
-  }
-
-  /** Clear any active provider filter so the next provider starts from "all". */
-  async resetProviderFilter() {
-    const all = this.page.locator(`${this.selectors.providerItem[this.device]}[data-url="all"]`).first();
-    if (await all.count()) {
-      await all.evaluate((el) => el.click());
-      await expect(all).toHaveClass(/active/);
-    }
   }
 
   /**
@@ -101,13 +85,84 @@ export class LobbyGamesLaunchOldPage extends LobbyGamesLaunchPage {
     const item = this.page
       .locator(`${this.selectors.providerItem[this.device]}[data-url="${provider.filter}"]`)
       .first();
-    await item.waitFor({ state: 'visible' });
+
+    // Some providers are collapsed behind "show all providers" (prod).
+    if (!(await item.isVisible().catch(() => false))) {
+      const viewAll = this.page
+        .locator(this.selectors.providersViewAll[this.device])
+        .first();
+      if (await viewAll.count()) {
+        await viewAll.evaluate((el) => el.click()).catch(() => {});
+        await this.page.waitForTimeout(500);
+      }
+    }
+    await item.waitFor({ state: 'visible', timeout: 15_000 });
 
     const isActive = await item.evaluate((el) => el.classList.contains('active'));
-    if (!isActive) await item.evaluate((el) => el.click());
+    if (!isActive) {
+      // The filtered game list is loaded via AJAX after the chip click; wait for
+      // that response so the first card we pick is from THIS provider.
+      const refresh = this.page
+        .waitForResponse((r) => /DynamicLobbyHelper\/GetGames/i.test(r.url()), {
+          timeout: 15_000,
+        })
+        .catch(() => null);
+      await item.evaluate((el) => el.click());
+      await refresh;
+    }
 
     await expect(item).toHaveClass(/active/);
+    await this.page
+      .waitForURL((url) => url.href.includes(`/${provider.filter}`), { timeout: 10_000 })
+      .catch(() => {});
     await this.gamesGrid.waitFor({ state: 'visible' });
+    await this.page.waitForTimeout(500);
+  }
+
+  /**
+   * Whether the provider is enabled/visible in the lobby filter. Providers that
+   * are collapsed behind "show all providers" are revealed first. Used to SKIP
+   * providers that don't exist on the partner instead of failing.
+   * @param {{ filter: string }} provider
+   * @returns {Promise<boolean>}
+   */
+  async isProviderAvailable(provider) {
+    const item = this.page
+      .locator(`${this.selectors.providerItem[this.device]}[data-url="${provider.filter}"]`)
+      .first();
+    if (await item.isVisible().catch(() => false)) return true;
+
+    const viewAll = this.page.locator(this.selectors.providersViewAll[this.device]).first();
+    if (await viewAll.count()) {
+      await viewAll.evaluate((el) => el.click()).catch(() => {});
+      await this.page.waitForTimeout(800);
+    }
+    return item.isVisible().catch(() => false);
+  }
+
+  /**
+   * Discover all ENABLED providers in the lobby filter. Used by the
+   * all-providers sweep so new providers are covered without hardcoding.
+   * @returns {Promise<{name: string, filter: string}[]>}
+   */
+  async listProviders() {
+    const items = this.page.locator(`${this.selectors.providerItem[this.device]}[data-url]`);
+    const count = await items.count();
+    const providers = [];
+    for (let i = 0; i < count; i += 1) {
+      const item = items.nth(i);
+      if (!(await item.isVisible().catch(() => false))) continue;
+      const filter = await item.getAttribute('data-url');
+      if (!filter || filter === 'all') continue;
+      const name =
+        (await item
+          .locator(this.selectors.providerImage[this.device])
+          .first()
+          .getAttribute('alt')
+          .catch(() => null)) || (await item.textContent())?.trim() || filter;
+      providers.push({ name, filter });
+    }
+    return providers;
   }
 }
 

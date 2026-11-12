@@ -18,6 +18,11 @@
     "test:headed": "playwright test --headed",
     "test:setup": "playwright test --project=auth-desktop --project=auth-mobile",
     "test:report": "playwright show-report",
+    "lobby:test": "node scripts/run-feature.js lobby totogaming --env=test --parallel=1 --workers=1",
+    "lobby:prod": "node scripts/run-feature.js lobby totogaming --env=prod --parallel=1 --workers=1",
+    "lobby:prod:headed": "node scripts/run-feature.js lobby totogaming --env=prod --parallel=1 --workers=1 -- --headed",
+    "lobby:prod:debug": "node scripts/run-feature.js lobby totogaming --env=prod --parallel=1 --workers=1 -- --debug",
+    "lobby:prod:trace": "node scripts/run-feature.js lobby totogaming --env=prod --parallel=1 --workers=1 -- --trace=on",
     "test:clean:force_stop_all_processes": "powershell -NoProfile -Command \"Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -like '*@playwright/test*test-server*' } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }; foreach ($d in 'test-results','playwright-report','blob-report','blob-report-merged','artifacts') { if (Test-Path $d) { Remove-Item -Recurse -Force $d } }\"",
 
 
@@ -25,7 +30,8 @@
     "test:totogaming:cozbet": "node scripts/run-feature.js totogaming cozbet --workers=2",
 
 
-    "test:suite": "node scripts/run-all.js --env=test --parallel=2 --workers=2"
+    "test:suite": "node scripts/run-all.js --env=test --parallel=2 --workers=2",
+    "test:suite:prod": "node scripts/run-all.js --env=prod --parallel=1 --workers=1"
   },
   "keywords": [],
   "author": "",

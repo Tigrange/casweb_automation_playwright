@@ -14,7 +14,7 @@ import { join } from 'node:path';
 import { test } from '#src/fixtures/base.js';
 import { getInboxPage } from '#src/factories/inboxRegistry.js';
 import { getRuntimeConfig } from '#src/config/index.js';
-import { storageStatePath } from '#src/config/storageState.js';
+import { requireStorageStatePath } from '#src/config/storageState.js';
 
 const { envName, partnerId, partner } = getRuntimeConfig();
 
@@ -29,7 +29,7 @@ function deviceOf(testInfo) {
 
 test.use({
   storageState: async ({}, use, testInfo) => {
-    await use(storageStatePath(envName, partnerId, deviceOf(testInfo)));
+    await use(requireStorageStatePath(envName, partnerId, deviceOf(testInfo)));
   },
 });
 
