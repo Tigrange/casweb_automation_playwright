@@ -2,8 +2,8 @@
 //
 // This is the ONLY place a real username/password login is performed. For each
 // registered partner x environment it:
-//   1. creates a FRESH player via the B2B Registration API (each run, each
-//      device), so authenticated tests never depend on a shared .env account
+//   1. reuses the hardcoded player captured in tests/support/players/ for this
+//      environment/partner/device (registration is currently disabled)
 //   2. opens the partner site (desktop or mobile template, by device)
 //   3. opens the login popup via the partner-aware LoginPopup factory
 //   4. logs in with the freshly registered player's credentials
@@ -19,17 +19,22 @@
 // Registration is fail-hard: if the API call fails the setup test fails and
 // Playwright skips every dependent e2e project (never a silent fallback).
 //
+// [DISABLED 2026-11-18 per tech-lead decision] No fresh player is registered per
+// run via the B2B Registration API. Tests reuse the hardcoded players kept in
+// tests/support/players/. The registration block below is commented out (not
+// deleted) so it can be re-enabled in the future.
+//
 // Partner handling uses the existing registry (src/config/partners.js) and the
 // existing LoginPopup factory (src/factories/loginRegistry.js), so no partner is
 // hard-coded and partner-specific popups keep working.
 
 import { test, expect } from '@playwright/test';
-import { writeFile } from 'node:fs/promises';
+import { writeFile, readFile } from 'node:fs/promises';
 import { PARTNERS } from '#src/config/partners.js';
 import { getLoginPopup } from '#src/factories/loginRegistry.js';
 import { storageStatePath } from '#src/config/storageState.js';
 import { playerPath } from '#src/config/players.js';
-import { registerPlayer } from '#src/api/registerApi.js';
+// import { registerPlayer } from '#src/api/registerApi.js'; // registration disabled (see note above)
 import { LOGGED_IN_MARKERS } from '#src/config/authMarkers.js';
 
 /**
@@ -63,13 +68,21 @@ export function defineAuthSetup(device) {
         async ({ page }) => {
           const baseURL = partner.envs[envName].baseURL;
 
-          // Fresh player per run/device, created through the B2B Registration
-          // API. Throwing here fails the setup test, which in turn skips every
-          // e2e project that depends on it.
-          const player = await registerPlayer({ partnerId: partner.id, envName, device });
-          await writeFile(
-            playerPath(envName, partner.id, device),
-            JSON.stringify(player, null, 2),
+          // [DISABLED 2026-11-18 per tech-lead decision] No fresh player per
+          // run/device via the B2B Registration API. To re-enable, uncomment the
+          // block below (it overwrites the stored player with a new one).
+          //
+          // const player = await registerPlayer({ partnerId: partner.id, envName, device });
+          // await writeFile(
+          //   playerPath(envName, partner.id, device),
+          //   JSON.stringify(player, null, 2),
+          // );
+
+          // Reuse the hardcoded player kept in tests/support/players/. Fail loudly
+          // if it is missing so dependent e2e projects skip rather than silently
+          // run unauthenticated.
+          const player = JSON.parse(
+            await readFile(playerPath(envName, partner.id, device), 'utf8'),
           );
 
           const login = getLoginPopup(page, partnerId);

@@ -19,7 +19,7 @@
     "test:setup": "playwright test --project=auth-desktop --project=auth-mobile",
     "test:report": "playwright show-report",
     "lobby:test": "node scripts/run-feature.js lobby totogaming --env=test --parallel=1 --workers=1",
-    "lobby:prod": "node scripts/run-feature.js lobby totogaming --env=prod --parallel=1 --workers=1",
+    "lobby:totogaming:prod": "node scripts/run-feature.js lobby totogaming --env=prod --parallel=1 --workers=1",
     "lobby:prod:headed": "node scripts/run-feature.js lobby totogaming --env=prod --parallel=1 --workers=1 -- --headed",
     "lobby:prod:debug": "node scripts/run-feature.js lobby totogaming --env=prod --parallel=1 --workers=1 -- --debug",
     "lobby:prod:trace": "node scripts/run-feature.js lobby totogaming --env=prod --parallel=1 --workers=1 -- --trace=on",
