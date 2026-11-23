@@ -15,12 +15,12 @@
 
 import { test, expect } from '#src/fixtures/base.js';
 import { getLoginPopup } from '#src/factories/loginRegistry.js';
-import { getRuntimeConfig } from '#src/config/index.js';
+import { resolveRuntimeConfig } from '#src/config/index.js';
 import { requireStorageStatePath } from '#src/config/storageState.js';
 import { LOGGED_IN_MARKERS } from '#src/config/authMarkers.js';
 import { deviceLocator } from '#src/utils/device.js';
 
-const { envName, partnerId, partner } = getRuntimeConfig();
+const { envName, partnerId, partner } = await resolveRuntimeConfig();
 
 // Session check: reuse the authenticated state captured by the auth setup
 // project for this project's device. Resolved at runtime from project metadata

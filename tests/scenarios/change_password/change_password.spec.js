@@ -20,11 +20,11 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import { test } from '#src/fixtures/base.js';
 import { getChangePasswordPage } from '#src/factories/changePasswordRegistry.js';
-import { getRuntimeConfig } from '#src/config/index.js';
+import { resolveRuntimeConfig } from '#src/config/index.js';
 import { requireStorageStatePath } from '#src/config/storageState.js';
 import { playerPath } from '#src/config/players.js';
 
-const { envName, partnerId, partner } = getRuntimeConfig();
+const { envName, partnerId, partner } = await resolveRuntimeConfig();
 
 /** The password the positive test changes the player to. */
 const NEW_PASSWORD = 'Changepassword123?';

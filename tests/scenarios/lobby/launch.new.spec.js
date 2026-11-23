@@ -14,13 +14,14 @@
 // per device exactly like the change-password / inbox specs (never logs in).
 
 import { test, expect } from '#src/fixtures/base.js';
-import { getRuntimeConfig } from '#src/config/index.js';
+import { resolveRuntimeConfig } from '#src/config/index.js';
 import { storageStatePath } from '#src/config/storageState.js';
 import { buildLobbyData } from '#data/lobbyData.js';
 import { LobbyGamesLaunchNewPage } from '#src/pages/lobby/LobbyGamesLaunchNewPage.js';
 import { ensureEnvPlayerSession } from '#support/envPlayerAuth.js';
+import { attachCloudflareEvidence } from '#support/cloudflareEvidence.js';
 
-const { envName, partnerId, partner } = getRuntimeConfig();
+const { envName, partnerId, partner } = await resolveRuntimeConfig();
 const lobbyData = buildLobbyData(partnerId, envName);
 const usesNewLobby = partner.lobbyNew === true;
 // Env-player login (see launch.old.spec.js). LOBBY_USE_ENV_PLAYER=0 falls back
@@ -38,8 +39,13 @@ test.use({
     const device = testInfo.project.metadata.authDevice ?? 'desktop';
     const path = storageStatePath(envName, partnerId, device, useEnvPlayer ? 'envplayer' : undefined);
     if (useEnvPlayer) {
-      sessionPromise ??= ensureEnvPlayerSession({ browser, partnerId, envName, device });
-      await sessionPromise;
+      try {
+        sessionPromise ??= ensureEnvPlayerSession({ browser, partnerId, envName, device });
+        await sessionPromise;
+      } catch (err) {
+        await attachCloudflareEvidence(err, testInfo);
+        throw err;
+      }
     }
     await use(path);
   },

@@ -13,10 +13,10 @@
 import { join } from 'node:path';
 import { test } from '#src/fixtures/base.js';
 import { getInboxPage } from '#src/factories/inboxRegistry.js';
-import { getRuntimeConfig } from '#src/config/index.js';
+import { resolveRuntimeConfig } from '#src/config/index.js';
 import { requireStorageStatePath } from '#src/config/storageState.js';
 
-const { envName, partnerId, partner } = getRuntimeConfig();
+const { envName, partnerId, partner } = await resolveRuntimeConfig();
 
 /** Shared PNG fixture (1x1) â€” the inbox uploader accepts images only. */
 const ATTACHMENT_PATH = join(process.cwd(), 'tests', 'data', 'fixtures', 'inbox-attachment.png');

@@ -13,11 +13,11 @@
 
 import { test } from '../../../src/fixtures/base.js';
 import { getCashierPage } from '../../../src/factories/cashierRegistry.js';
-import { getRuntimeConfig } from '../../../src/config/index.js';
+import { resolveRuntimeConfig } from '../../../src/config/index.js';
 import { storageStatePath } from '../../../src/config/storageState.js';
 import { buildDepositData } from '../../data/depositData.js';
 
-const { envName, partnerId, partner } = getRuntimeConfig();
+const { envName, partnerId, partner } = await resolveRuntimeConfig();
 
 test.describe('CASHIER [01]: deposit availability', () => {
   test.use({

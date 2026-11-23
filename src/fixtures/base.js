@@ -3,12 +3,12 @@
 // you would import `@playwright/test`.
 
 import { test as base, expect } from '@playwright/test';
-import { getRuntimeConfig } from '../config/index.js';
+import { resolveRuntimeConfig } from '../config/index.js';
 
 export const test = base.extend({
   /** Resolved partner/env context for the active run (creds may be null). */
   runtime: async ({}, use) => {
-    const config = getRuntimeConfig();
+    const config = await resolveRuntimeConfig();
     await use(config);
   },
 });

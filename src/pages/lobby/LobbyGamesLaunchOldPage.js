@@ -49,6 +49,13 @@ export class LobbyGamesLaunchOldPage extends LobbyGamesLaunchPage {
         desktop: 'img',
         mobile: 'img',
       },
+      // Some partners (e.g. Betfa TST) have NO provider chips; their filter is a
+      // row of category "group" slides instead. Used as a fallback so the same
+      // flow (filter -> launch first game) works on that design too.
+      lobbyGroup: {
+        desktop: '.js_lobby_groups[data-url]',
+        mobile: '.js_lobby_groups[data-url]', // TODO verify mobile
+      },
     };
   }
 
@@ -82,7 +89,7 @@ export class LobbyGamesLaunchOldPage extends LobbyGamesLaunchPage {
    * @param {{ name?: string, filter: string }} provider
    */
   async selectProvider(provider) {
-    const item = this.page
+    let item = this.page
       .locator(`${this.selectors.providerItem[this.device]}[data-url="${provider.filter}"]`)
       .first();
 
@@ -96,6 +103,17 @@ export class LobbyGamesLaunchOldPage extends LobbyGamesLaunchPage {
         await this.page.waitForTimeout(500);
       }
     }
+
+    // Design variant without provider chips (e.g. Betfa TST): fall back to the
+    // category "group" filter row, which follows the same select/active/refresh
+    // contract as a provider chip.
+    if (!(await item.isVisible().catch(() => false))) {
+      const group = this.page
+        .locator(`${this.selectors.lobbyGroup[this.device]}[data-url="${provider.filter}"]`)
+        .first();
+      if (await group.isVisible().catch(() => false)) item = group;
+    }
+
     await item.waitFor({ state: 'visible', timeout: 15_000 });
 
     const isActive = await item.evaluate((el) => el.classList.contains('active'));
@@ -157,7 +175,7 @@ export class LobbyGamesLaunchOldPage extends LobbyGamesLaunchPage {
     // missing elements (e.g. a chip without an <img>), which is pathologically
     // slow across many chips.
     const imgSelector = this.selectors.providerImage[this.device];
-    return this.page
+    const providers = await this.page
       .locator(`${this.selectors.providerItem[this.device]}[data-url]`)
       .evaluateAll((els, imgSel) => {
         const out = [];
@@ -172,6 +190,23 @@ export class LobbyGamesLaunchOldPage extends LobbyGamesLaunchPage {
         }
         return out;
       }, imgSelector);
+
+    if (providers.length) return providers;
+
+    // Design variant without provider chips (e.g. Betfa TST): use the visible
+    // category "group" filter row as the filter list instead.
+    return this.page
+      .locator(this.selectors.lobbyGroup[this.device])
+      .evaluateAll((els) => {
+        const out = [];
+        for (const el of els) {
+          if (el.offsetParent === null) continue;
+          const filter = el.getAttribute('data-url');
+          if (!filter || filter === 'all') continue;
+          out.push({ name: el.textContent.trim() || filter, filter });
+        }
+        return out;
+      });
   }
 }
 

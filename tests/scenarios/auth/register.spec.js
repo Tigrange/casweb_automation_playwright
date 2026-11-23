@@ -14,10 +14,10 @@
 
 import { test, expect } from '#src/fixtures/base.js';
 import { getRegisterPopup } from '#src/factories/registerRegistry.js';
-import { getRuntimeConfig } from '#src/config/index.js';
+import { resolveRuntimeConfig } from '#src/config/index.js';
 import { buildRegisterData } from '#data/registerData.js';
 
-const { partnerId, partner } = getRuntimeConfig();
+const { partnerId, partner } = await resolveRuntimeConfig();
 const VALID = buildRegisterData(partnerId);
 
 /** Navigate home, open the register dialog for the active partner, return it. */

@@ -1,6 +1,6 @@
 // @ts-check
 import { defineConfig, devices } from '@playwright/test';
-import { getRuntimeConfig } from './src/config/index.js';
+import { resolveRuntimeConfig } from './src/config/index.js';
 import { buildGrep } from './src/config/testFilters.js';
 import { getArtifactPaths } from './scripts/lib/artifacts.js';
 
@@ -27,7 +27,7 @@ import { getArtifactPaths } from './scripts/lib/artifacts.js';
  */
 
 // Resolve runtime defaults so baseURL etc. are injected into projects below.
-const RUNTIME = getRuntimeConfig();
+const RUNTIME = await resolveRuntimeConfig();
 
 /**
  * Feature-scoped artifacts for DIRECT Playwright runs (the "run across all

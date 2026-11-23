@@ -25,14 +25,15 @@
 
 import { readFile } from 'node:fs/promises';
 import { test, expect } from '#src/fixtures/base.js';
-import { getRuntimeConfig } from '#src/config/index.js';
+import { resolveRuntimeConfig } from '#src/config/index.js';
 import { storageStatePath } from '#src/config/storageState.js';
 import { playerPath } from '#src/config/players.js';
 import { LobbyGamesLaunchOldPage } from '#src/pages/lobby/LobbyGamesLaunchOldPage.js';
 import { LobbyGamesLaunchNewPage } from '#src/pages/lobby/LobbyGamesLaunchNewPage.js';
 import { ensureEnvPlayerSession } from '#support/envPlayerAuth.js';
+import { attachCloudflareEvidence } from '#support/cloudflareEvidence.js';
 
-const { envName, partnerId, partner } = getRuntimeConfig();
+const { envName, partnerId, partner } = await resolveRuntimeConfig();
 
 let sessionPromise;
 
@@ -57,18 +58,23 @@ test.use({
   // test context is created (same pattern as the other lobby specs).
   storageState: async ({ browser }, use, testInfo) => {
     const device = testInfo.project.metadata.authDevice ?? 'desktop';
-    sessionPromise ??= (async () => {
-      const player = await readPlayer(device);
-      await ensureEnvPlayerSession({
-        browser,
-        partnerId,
-        envName,
-        device,
-        username: player.username,
-        password: player.password,
-      });
-    })();
-    await sessionPromise;
+    try {
+      sessionPromise ??= (async () => {
+        const player = await readPlayer(device);
+        await ensureEnvPlayerSession({
+          browser,
+          partnerId,
+          envName,
+          device,
+          username: player.username,
+          password: player.password,
+        });
+      })();
+      await sessionPromise;
+    } catch (err) {
+      await attachCloudflareEvidence(err, testInfo);
+      throw err;
+    }
     await use(storageStatePath(envName, partnerId, device, 'envplayer'));
   },
 });
@@ -151,10 +157,6 @@ test.describe('LOBBY [03]: all header lobbys', () => {
   // the whole test plenty of headroom (many lobbys x provider filter + launch).
   test.describe.configure({ mode: 'serial', timeout: 900_000 });
 
-  // SCALE TODO: remove this guard once other partners are covered. Discovery and
-  // design detection are already partner-agnostic; only verification is pending.
-  if (partnerId !== 'totogaming') return;
-
   test(
     `LOBBY [03] all header lobbys · ${partner.displayName}`,
     { tag: ['@positive', '@regression'] },
@@ -199,14 +201,29 @@ const lobbys = await discoverLobbys(page);
             continue;
           }
 
-          // Take the FIRST provider in the filter and launch its first game.
-          // If the game does not open within the short verify window, capture a
-          // screenshot of the failing lobby and move on to the next lobby.
-          const provider = providers[0];
-          console.log(`[lobby] providers @${at()}:`, providers.length, 'first:', provider.filter);
+          // Pick the FIRST filter that actually has games (some filters, e.g. a
+          // "favourites" group, are empty for the player), then launch its first
+          // game. If the game does not open within the short verify window,
+          // capture a screenshot of the failing lobby and move on to the next.
+          let provider = null;
+          for (const candidate of providers.slice(0, 5)) {
+            try {
+              await lobby.selectProvider(candidate);
+              await lobby.firstVisibleGameCard(3_000);
+              provider = candidate;
+              break;
+            } catch {
+              // Try the next filter.
+            }
+          }
+          if (!provider) {
+            incidents.push({ lobby: lobbyUrl, error: 'no filter with visible games' });
+            continue;
+          }
+
+          console.log(`[lobby] filters @${at()}:`, providers.length, 'chosen:', provider.filter);
           try {
-            await lobby.selectProvider(provider);
-            // No pinned game -> the FIRST game of the filtered provider.
+            // No pinned game -> the FIRST game of the chosen filter.
             await lobby.launchGame(null, { verifyTimeout: 10_000 });
             console.log(`[lobby] game launched @${at()}`);
           } catch (err) {

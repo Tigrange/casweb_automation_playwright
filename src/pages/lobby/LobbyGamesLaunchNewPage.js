@@ -147,6 +147,14 @@ export class LobbyGamesLaunchNewPage extends LobbyGamesLaunchPage {
    * @returns {Promise<{name: string, filter: string}[]>}
    */
   async listProviders() {
+    // The filter popup is rendered lazily on prod — it only enters the DOM after
+    // the filter button is clicked (on TST it is pre-rendered). Open it first
+    // when needed so the provider items can be read.
+    if (!(await this.filterPopup.count())) {
+      await this.filterButton.click().catch(() => {});
+      await this.filterPopup.waitFor({ state: 'visible', timeout: 10_000 }).catch(() => {});
+    }
+
     const items = this.page.locator(`${this.selectors.providerItem[this.device]}[data-unique-url]`);
     const count = await items.count();
     const providers = [];
