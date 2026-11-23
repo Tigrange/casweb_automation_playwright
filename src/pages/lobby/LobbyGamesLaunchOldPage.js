@@ -146,23 +146,32 @@ export class LobbyGamesLaunchOldPage extends LobbyGamesLaunchPage {
    * @returns {Promise<{name: string, filter: string}[]>}
    */
   async listProviders() {
-    const items = this.page.locator(`${this.selectors.providerItem[this.device]}[data-url]`);
-    const count = await items.count();
-    const providers = [];
-    for (let i = 0; i < count; i += 1) {
-      const item = items.nth(i);
-      if (!(await item.isVisible().catch(() => false))) continue;
-      const filter = await item.getAttribute('data-url');
-      if (!filter || filter === 'all') continue;
-      const name =
-        (await item
-          .locator(this.selectors.providerImage[this.device])
-          .first()
-          .getAttribute('alt')
-          .catch(() => null)) || (await item.textContent())?.trim() || filter;
-      providers.push({ name, filter });
+    // Expand collapsed providers first (prod hides some behind "view all").
+    const viewAll = this.page.locator(this.selectors.providersViewAll[this.device]).first();
+    if (await viewAll.count()) {
+      await viewAll.evaluate((el) => el.click()).catch(() => {});
+      await this.page.waitForTimeout(500);
     }
-    return providers;
+
+    // Read everything in ONE evaluate: per-chip getAttribute calls auto-wait for
+    // missing elements (e.g. a chip without an <img>), which is pathologically
+    // slow across many chips.
+    const imgSelector = this.selectors.providerImage[this.device];
+    return this.page
+      .locator(`${this.selectors.providerItem[this.device]}[data-url]`)
+      .evaluateAll((els, imgSel) => {
+        const out = [];
+        for (const el of els) {
+          const visible = el.offsetParent !== null;
+          if (!visible) continue;
+          const filter = el.getAttribute('data-url');
+          if (!filter || filter === 'all') continue;
+          const name =
+            el.querySelector(imgSel)?.getAttribute('alt') || el.textContent.trim() || filter;
+          out.push({ name, filter });
+        }
+        return out;
+      }, imgSelector);
   }
 }
 

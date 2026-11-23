@@ -206,8 +206,11 @@ export class LobbyGamesLaunchPage extends BasePage {
    * while `data-has-game`, `data-game-id` and the iframe src all look valid.
    *
    * @param {{ id?: string|number, name?: string } | null} [game]
+   * @param {{ verifyTimeout?: number }} [options] optional launch-verify timeout
+   *        (defaults to 30s; shorter values let a sweep fail fast per lobby)
    */
-  async launchGame(game = null) {
+  async launchGame(game = null, options = {}) {
+    const verifyTimeout = options.verifyTimeout ?? 30_000;
     await this.dismissOverlays();
 
     // Resolve the card + play target with retries: the lobby re-renders its
@@ -297,7 +300,7 @@ export class LobbyGamesLaunchPage extends BasePage {
     }
 
     try {
-      await this.expectGameLaunched(resolvedGame, launchResponses);
+      await this.expectGameLaunched(resolvedGame, launchResponses, verifyTimeout);
     } finally {
       context.off('response', onResponse);
     }
@@ -366,8 +369,9 @@ export class LobbyGamesLaunchPage extends BasePage {
    *
    * @param {{ id?: string|number, name?: string }} game
    * @param {import('@playwright/test').Response[]} [launchResponses]
+   * @param {number} [timeout] launch-verify wait per signal (default 30s)
    */
-  async expectGameLaunched(game, launchResponses = []) {
+  async expectGameLaunched(game, launchResponses = [], timeout = 30_000) {
     const page = this.activePage;
     const launchContainer = page.locator(this.selectors.launchContainer[this.device]);
     const verification = page.locator(this.selectors.verificationPopup[this.device]);
@@ -378,24 +382,24 @@ export class LobbyGamesLaunchPage extends BasePage {
     // Blocked/restricted player page can replace the game page after redirect.
     const blockedError = page.locator(this.selectors.blockedError[this.device]).first();
 
-    const directIframe = this.waitForGameIframe(page, 30_000).catch(() => null);
+    const directIframe = this.waitForGameIframe(page, timeout).catch(() => null);
 
     const outcome = await Promise.race([
       launchContainer
-        .waitFor({ state: 'visible', timeout: 30_000 })
+        .waitFor({ state: 'visible', timeout })
         .then(() => 'wrapped')
         .catch(() => null),
       directIframe.then((iframe) => (iframe ? 'direct' : null)),
       verification
-        .waitFor({ state: 'visible', timeout: 30_000 })
+        .waitFor({ state: 'visible', timeout })
         .then(() => 'verification')
         .catch(() => null),
       gameError
-        .waitFor({ state: 'visible', timeout: 30_000 })
+        .waitFor({ state: 'visible', timeout })
         .then(() => 'error')
         .catch(() => null),
       blockedError
-        .waitFor({ state: 'visible', timeout: 30_000 })
+        .waitFor({ state: 'visible', timeout })
         .then(() => 'blocked')
         .catch(() => null),
     ]);
@@ -441,15 +445,15 @@ export class LobbyGamesLaunchPage extends BasePage {
       iframe = page.locator(this.selectors.launchIframe[this.device]).first();
       const wrappedOutcome = await Promise.race([
         iframe
-          .waitFor({ state: 'visible', timeout: 30_000 })
+          .waitFor({ state: 'visible', timeout })
           .then(() => 'iframe')
           .catch(() => null),
         gameError
-          .waitFor({ state: 'visible', timeout: 30_000 })
+          .waitFor({ state: 'visible', timeout })
           .then(() => 'error')
           .catch(() => null),
         blockedError
-          .waitFor({ state: 'visible', timeout: 30_000 })
+          .waitFor({ state: 'visible', timeout })
           .then(() => 'blocked')
           .catch(() => null),
       ]);
@@ -555,19 +559,19 @@ export class LobbyGamesLaunchPage extends BasePage {
 
       const frameOutcome = await Promise.race([
         nestedIframe
-          .waitFor({ state: 'attached', timeout: 30_000 })
+          .waitFor({ state: 'attached', timeout })
           .then(() => 'game-surface')
           .catch(() => null),
         canvas
-          .waitFor({ state: 'visible', timeout: 30_000 })
+          .waitFor({ state: 'visible', timeout })
           .then(() => 'game-surface')
           .catch(() => null),
         frameErrorImg
-          .waitFor({ state: 'visible', timeout: 30_000 })
+          .waitFor({ state: 'visible', timeout })
           .then(() => 'error-img')
           .catch(() => null),
         frameErrorText
-          .waitFor({ state: 'visible', timeout: 30_000 })
+          .waitFor({ state: 'visible', timeout })
           .then(() => 'error-text')
           .catch(() => null),
       ]);

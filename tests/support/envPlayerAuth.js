@@ -20,24 +20,28 @@ const VIEWPORTS = {
 /**
  * Log in with the partner's env account and persist its storage state.
  *
- * @param {{ browser: import('@playwright/test').Browser, partnerId: string, envName: string, device?: 'desktop'|'mobile' }} params
+ * Credentials come from `username`/`password` when provided (e.g. read from a
+ * tests/support/players/<env>-<partner>-<device>.json file); otherwise they are
+ * resolved from the partner's .env account as before.
+ *
+ * @param {{ browser: import('@playwright/test').Browser, partnerId: string, envName: string, device?: 'desktop'|'mobile', username?: string, password?: string }} params
  */
-export async function ensureEnvPlayerSession({ browser, partnerId, envName, device = 'desktop' }) {
+export async function ensureEnvPlayerSession({ browser, partnerId, envName, device = 'desktop', username: explicitUsername, password: explicitPassword }) {
   const partnerEnv = PARTNERS[partnerId]?.envs?.[envName];
   const baseURL = partnerEnv?.baseURL;
   if (!baseURL) {
     throw new Error(`No baseURL for partner "${partnerId}" env "${envName}"`);
   }
 
-  // Use the partner's configured credential prefix so prod accounts resolve
-  // correctly, e.g. TOTOGAMING_PROD_*, COZBET_SHARED_PROD_*, TOTOGAMINGRO_PROD_*.
+  // Explicit credentials (player JSON) win; otherwise use the .env account.
   const prefix = partnerEnv.credsEnvPrefix || partnerId.toUpperCase();
   const env = envName.toUpperCase();
-  const username = process.env[`${prefix}_${env}_USERNAME`];
-  const password = process.env[`${prefix}_${env}_PASSWORD`];
+  const username = explicitUsername || process.env[`${prefix}_${env}_USERNAME`];
+  const password = explicitPassword || process.env[`${prefix}_${env}_PASSWORD`];
   if (!username || !password) {
     throw new Error(
-      `Missing ${prefix}_${env}_USERNAME / ${prefix}_${env}_PASSWORD for the env-player login.`,
+      `Missing player credentials for ${partnerId} [${envName}] ${device}. ` +
+        `Provide them via the player JSON or ${prefix}_${env}_USERNAME / ${prefix}_${env}_PASSWORD.`,
     );
   }
 
