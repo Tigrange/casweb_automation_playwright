@@ -201,44 +201,58 @@ const lobbys = await discoverLobbys(page);
             continue;
           }
 
-          // Pick the FIRST filter that actually has games (some filters, e.g. a
-          // "favourites" group, are empty for the player), then launch its first
-          // game. If the game does not open within the short verify window,
-          // capture a screenshot of the failing lobby and move on to the next.
-          let provider = null;
-          for (const candidate of providers.slice(0, 5)) {
+          // Try up to 3 filters; a filter can be empty for the player (e.g.
+          // "favourites") or its first game can be broken/restricted (provider
+          // error 999, account restriction Code -2). Every failed attempt keeps
+          // its screenshot as evidence; the lobby only fails when NO filter can
+          // launch a game.
+          const candidateFilters = providers.slice(0, 3);
+          const failedAttempts = [];
+          let launched = false;
+          for (const candidate of candidateFilters) {
             try {
               await lobby.selectProvider(candidate);
               await lobby.firstVisibleGameCard(3_000);
-              provider = candidate;
+            } catch (err) {
+              failedAttempts.push({
+                filter: candidate.filter,
+                error: `no visible games — ${String(err?.message || err).split('\n')[0]}`,
+              });
+              continue;
+            }
+
+            try {
+              // No pinned game -> the FIRST game of the chosen filter.
+              await lobby.launchGame(null, { verifyTimeout: 10_000 });
+              launched = true;
+              console.log(`[lobby] game launched @${at()} via filter: ${candidate.filter}`);
               break;
-            } catch {
-              // Try the next filter.
+            } catch (err) {
+              const shotName = `lobby-fail-${incidents.length + 1}-${candidate.filter}.png`;
+              await testInfo
+                .attach(shotName, {
+                  body: await page.screenshot().catch(() => Buffer.alloc(0)),
+                  contentType: 'image/png',
+                })
+                .catch(() => {});
+              failedAttempts.push({
+                filter: candidate.filter,
+                screenshot: shotName,
+                error: String(err?.message || err).split('\n')[0],
+              });
+              // A failed launch can leave the play page; reopen the lobby for
+              // the next filter attempt.
+              await closeGamePages(page);
+              await lobby.open({ lobbyUrl }).catch(() => {});
             }
           }
-          if (!provider) {
-            incidents.push({ lobby: lobbyUrl, error: 'no filter with visible games' });
-            continue;
-          }
 
-          console.log(`[lobby] filters @${at()}:`, providers.length, 'chosen:', provider.filter);
-          try {
-            // No pinned game -> the FIRST game of the chosen filter.
-            await lobby.launchGame(null, { verifyTimeout: 10_000 });
-            console.log(`[lobby] game launched @${at()}`);
-          } catch (err) {
-            const shotName = `lobby-fail-${incidents.length + 1}.png`;
-            await testInfo
-              .attach(shotName, {
-                body: await page.screenshot().catch(() => Buffer.alloc(0)),
-                contentType: 'image/png',
-              })
-              .catch(() => {});
+          if (!launched) {
             incidents.push({
               lobby: lobbyUrl,
-              provider: provider.filter,
-              screenshot: shotName,
-              error: String(err?.message || err).split('\n')[0],
+              error: `no filter could launch (${failedAttempts
+                .map((f) => `${f.filter}: ${f.error}`)
+                .join(' | ')})`,
             });
           }
         } catch (err) {
