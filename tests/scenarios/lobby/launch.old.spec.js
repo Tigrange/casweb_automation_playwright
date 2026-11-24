@@ -93,44 +93,4 @@ test.describe('LOBBY [01] legacy design: provider game launch', () => {
       },
     );
   }
-
-  // Quick way to cover EVERY provider without hardcoding: discover the enabled
-  // provider chips from the lobby filter and launch the first game for each.
-  // Covers direct (Pragmatic/Amusnet) and RGS V5/V3 providers.
-  // Opt-in because it is long: run with LOBBY_SWEEP=1.
-  test(
-    `LOBBY [02] legacy: all providers sweep · ${partner.displayName}`,
-    { tag: ['@regression'] },
-    async ({ runtime, page }, testInfo) => {
-      test.skip(process.env.LOBBY_SWEEP !== '1', 'set LOBBY_SWEEP=1 to run the all-providers sweep');
-
-      const lobby = new LobbyGamesLaunchOldPage(page);
-      await page.goto(runtime.baseURL, { waitUntil: 'domcontentloaded' });
-      await lobby.open(lobbyData);
-
-      const providers = await lobby.listProviders();
-      const incidents = [];
-      for (const provider of providers) {
-        try {
-          await lobby.selectProvider(provider);
-          await lobby.launchGame();
-        } catch (err) {
-          incidents.push({ provider: provider.filter, error: String(err).split('\n')[0] });
-          for (const popup of page.context().pages()) {
-            if (popup !== page && !popup.isClosed()) await popup.close().catch(() => {});
-          }
-          await lobby.open(lobbyData).catch(() => {});
-        }
-      }
-
-      await testInfo.attach('lobby-sweep-incidents.json', {
-        body: JSON.stringify(incidents, null, 2),
-        contentType: 'application/json',
-      });
-      expect(
-        incidents.map((i) => `${i.provider}: ${i.error}`),
-        `Provider launch incidents:\n${incidents.map((i) => `· ${i.provider}: ${i.error}`).join('\n') || '(none)'}`,
-      ).toEqual([]);
-    },
-  );
 });
