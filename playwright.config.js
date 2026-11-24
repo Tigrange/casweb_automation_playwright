@@ -37,7 +37,9 @@ const RUNTIME = await resolveRuntimeConfig();
  * runners use (no duplicated path logic). When PW_FEATURE is unset, the default
  * repo-local test-results/ and playwright-report/ are kept.
  */
-const FEATURE_PATHS = process.env.PW_FEATURE ? getArtifactPaths(process.env.PW_FEATURE) : null;
+const FEATURE_PATHS = process.env.PW_FEATURE
+  ? getArtifactPaths(process.env.PW_FEATURE, process.env.PLAYWRIGHT_ENV)
+  : null;
 
 /**
  * Test-title filter (grep) built from TEST_TYPE / TEST_TAG.

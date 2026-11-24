@@ -269,7 +269,7 @@ export async function runAllPartners({ spec, label, phases, defaultProjects, noD
   // Feature-scoped artifact tree for THIS runner. Only this feature's dirs are
 // cleaned below — never the whole artifact root — so concurrent/other features
 // (e.g. register) are untouched.
-  const paths = getArtifactPaths(label);
+  const paths = getArtifactPaths(label, envName);
   safeRemove(paths.blob);
   safeRemove(paths.blobMerged);
   safeRemove(paths.report);

@@ -96,6 +96,17 @@ export const FEATURES = {
     enabled: false,
     noDeps: true
   },
+  // All header lobby pages: open each discovered lobby page and launch its first
+  // available game (no provider/category filter), then move to the next lobby.
+  // Artifacts live under
+  //   artifacts/lobby-pages-redirection-and-launch/<env>/...
+  lobbyPages: {
+    spec: 'tests/scenarios/lobby/launch.all.spec.js',
+    label: 'lobby-pages-redirection-and-launch',
+    phases: [{ name: 'e2e', projects: ['e2e-chromium'] }],
+    noDeps: true,
+    enabled: false,
+  },
   changepassword: {
     spec: 'tests/scenarios/change_password/change_password.spec.js',
     label: 'change-password',

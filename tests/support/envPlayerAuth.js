@@ -177,12 +177,15 @@ async function loginOnDomain({ browser, partnerId, envName, device, username, pa
         .goto(loginUrl, { waitUntil: 'domcontentloaded', timeout: 30_000 })
         .catch(() => null);
       lastStatus = loginResponse?.status() ?? null;
-      await page.waitForTimeout(1_000);
-      hasLoginForm =
-        (await page
-          .locator('#password, [automation="password_input"]')
-          .count()
-          .catch(() => 0)) > 0;
+      // The login form can be a lazily-rendered dialog (Betfa TST redirects to
+      // /?logDialog=1 and mounts the form asynchronously), so poll for it
+      // instead of trusting a single short wait.
+      hasLoginForm = await page
+        .locator('#password, [automation="password_input"]')
+        .first()
+        .waitFor({ state: 'visible', timeout: 8_000 })
+        .then(() => true)
+        .catch(() => false);
       if (!hasLoginForm && (await isCloudflareChallenge(page, loginResponse))) cfChallenges += 1;
       console.log(
         `[envPlayerAuth] login page attempt ${attempt} status=${lastStatus} ` +
