@@ -51,10 +51,20 @@ export class LobbyGamesLaunchNewPage extends LobbyGamesLaunchPage {
         desktop: '#js_wbp_filter_show_all_games',
         mobile: '#js_wbp_filter_show_all_games', // TODO verify mobile
       },
-      // Widget grid that replaces the legacy #js_games_lobby.
+      // Widget grid that replaces the legacy #js_games_lobby. The widgetBased
+      // variant (e.g. TotoRo) has no grid container id and renders cards in
+      // swipers/sections, so fall back to `body` — cards are then resolved by
+      // their own class (see gameCard).
       gamesGrid: {
-        desktop: '#js_wbp_games_grid',
-        mobile: '#js_wbp_games_grid', // TODO verify mobile
+        desktop: '#js_wbp_games_grid, body',
+        mobile: '#js_wbp_games_grid, body', // TODO verify mobile
+      },
+      // Widget card root. `js_wbp_games` is the widgetBased card (it contains
+      // `wb_card_body` and carries `data-game-id`); the `js_dl_games*` classes
+      // cover the other widget variant. First match wins in document order.
+      gameCard: {
+        desktop: '.js_wbp_games, .js_dl_games_cont, .js_dl_games',
+        mobile: '.js_wbp_games, .js_dl_games_cont, .js_dl_games', // TODO verify mobile
       },
     };
   }

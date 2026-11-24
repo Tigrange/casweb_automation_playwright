@@ -123,7 +123,7 @@ async function discoverLobbys(page) {
  */
 async function detectLobbyPage(page) {
   const legacy = page.locator('#js_lobby_main_wrapper'); //detects the legacy lobby wrapper (desktop + mobile)
-  const widget = page.locator('#js_filter_button'); //detects the widget lobby filter button (desktop + mobile)
+  const widget = page.locator('#js_filter_button'); //widget-family lobby marker (Cozbet/TotoRo, desktop + mobile)
 
   const outcome = await Promise.race([
     legacy

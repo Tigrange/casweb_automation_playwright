@@ -239,6 +239,17 @@ export class LobbyGamesLaunchPage extends BasePage {
             targetUrl = `${lang ? `/${lang}` : ''}/play/real/${cardHref}`;
           }
         }
+
+        // Widget-family lobbys (Cozbet, TotoRo, ...) put the play URL on an
+        // anchor INSIDE the card (e.g. /en/play/real/<game> or /play/fun/<game>)
+        // instead of a `.js_dl_play` element or a `data-href` attribute.
+        if (!targetUrl) {
+          targetUrl = await card
+            .locator('a[href]')
+            .first()
+            .getAttribute('href')
+            .catch(() => null);
+        }
       } catch {
         await this.page.waitForTimeout(500);
       }
