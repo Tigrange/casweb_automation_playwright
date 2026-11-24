@@ -348,6 +348,46 @@ export class LobbyGamesLaunchPage extends BasePage {
     return null;
   }
 
+  /**
+   * Poll for a rendered DOM-app game surface.
+   *
+   * Some providers (e.g. Galaxsys P2P skill games) render a full React app
+   * directly inside the launcher frame instead of a nested iframe or a canvas.
+   * Verified on TotoGaming prod "Tournament": `body > div#root` with a
+   * `<header>` and a visible `<main>` section (507 elements, ~1.2k chars of
+   * text). Success = header present + visible main + substantial content, and
+   * no provider error markers (the error signals are raced separately).
+   *
+   * NOTE: if a "game not launched" flag is identified for this app family in the
+   * future, extend this check with it (e.g. an error banner/state in #root).
+   *
+   * @param {import('@playwright/test').Frame} frame
+   * @param {number} [timeout]
+   * @returns {Promise<boolean>}
+   */
+  async waitForAppSurface(frame, timeout = 30_000) {
+    const end = Date.now() + timeout;
+    while (Date.now() < end) {
+      try {
+        const ready = await frame.evaluate(() => {
+          const header = document.querySelector('header');
+          const main = document.querySelector('main');
+          if (!header || !main) return false;
+          const rect = main.getBoundingClientRect();
+          const mainVisible = rect.width > 0 && rect.height > 0;
+          const elementCount = document.querySelectorAll('*').length;
+          const textLen = (document.body.innerText || '').trim().length;
+          return mainVisible && elementCount >= 20 && textLen >= 50;
+        });
+        if (ready) return true;
+      } catch {
+        // Frame navigating/detached — keep polling.
+      }
+      await this.page.waitForTimeout(500);
+    }
+    return false;
+  }
+
   /** Read the RGS/provider error message (`.error__texts`) when present. */
   async readGameErrorText(page = this.activePage) {
     const text = await page
@@ -577,6 +617,11 @@ export class LobbyGamesLaunchPage extends BasePage {
           .waitFor({ state: 'visible', timeout })
           .then(() => 'game-surface')
           .catch(() => null),
+        // DOM-app surface (e.g. Galaxsys P2P React skill games): header + main
+        // rendered directly in the launcher frame, no nested iframe/canvas.
+        this.waitForAppSurface(frame, timeout)
+          .then((ok) => (ok ? 'game-surface' : null))
+          .catch(() => null),
         frameErrorImg
           .waitFor({ state: 'visible', timeout })
           .then(() => 'error-img')
@@ -607,7 +652,7 @@ export class LobbyGamesLaunchPage extends BasePage {
           ? 'provider error state (.error__img)'
           : frameOutcome === 'error-text'
             ? 'provider error message'
-            : 'outer iframe has no nested game iframe and no canvas';
+            : 'outer iframe has no nested game iframe, canvas or rendered app surface';
 
       throw new Error(
         `Game did not launch for game ${game.id} (${game.name || 'unknown'}): ` +

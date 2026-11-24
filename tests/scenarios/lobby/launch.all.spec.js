@@ -30,7 +30,7 @@ import { playerPath } from '#src/config/players.js';
 import { LobbyGamesLaunchOldPage } from '#src/pages/lobby/LobbyGamesLaunchOldPage.js';
 import { LobbyGamesLaunchNewPage } from '#src/pages/lobby/LobbyGamesLaunchNewPage.js';
 import { ensureEnvPlayerSession } from '#support/envPlayerAuth.js';
-import { attachCloudflareEvidence } from '#support/cloudflareEvidence.js';
+import { skipOnCloudflare } from '#support/cloudflareEvidence.js';
 
 const { envName, partnerId, partner } = await resolveRuntimeConfig();
 
@@ -71,8 +71,7 @@ test.use({
       })();
       await sessionPromise;
     } catch (err) {
-      await attachCloudflareEvidence(err, testInfo);
-      throw err;
+      await skipOnCloudflare(err, testInfo, { partnerId, envName });
     }
     await use(storageStatePath(envName, partnerId, device, 'envplayer'));
   },

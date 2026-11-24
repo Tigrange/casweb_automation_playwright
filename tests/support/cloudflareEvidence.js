@@ -26,4 +26,25 @@ export async function attachCloudflareEvidence(err, testInfo) {
     .catch(() => {});
 }
 
+/**
+ * Handle a login error: attach Cloudflare evidence when applicable and SKIP the
+ * test (Cloudflare cannot be switched off on the partner side, so a blocked
+ * partner is skipped — with the evidence in the report — and the run continues
+ * with the other partners). Non-Cloudflare errors are re-thrown unchanged.
+ *
+ * @param {any} err
+ * @param {import('@playwright/test').TestInfo} testInfo
+ * @param {{ partnerId: string, envName: string }} meta
+ */
+export async function skipOnCloudflare(err, testInfo, { partnerId, envName }) {
+  if (err?.code !== 'CLOUDFLARE_BLOCKED') throw err;
+
+  await attachCloudflareEvidence(err, testInfo);
+  const reason =
+    `Cloudflare blocked ${partnerId} [${envName}] — skipped ` +
+    `(partner site requires allowlisting; evidence attached)`;
+  console.warn(`[cloudflare] ${reason}`);
+  testInfo.skip(true, reason);
+}
+
 export default attachCloudflareEvidence;

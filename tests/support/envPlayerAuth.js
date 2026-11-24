@@ -1,4 +1,4 @@
-// Env-player login for the LOBBY build-time suite.
+﻿// Env-player login for the LOBBY build-time suite.
 //
 // While player verification is being clarified with the dev team, the lobby
 // tests use an EXISTING (verified) account from .env instead of the fresh
@@ -7,12 +7,12 @@
 // state file reused by the specs.
 //
 // Cloudflare handling:
-//   · Some partner sites sit behind Cloudflare and answer automated logins with
+//   Â· Some partner sites sit behind Cloudflare and answer automated logins with
 //     a challenge (403 / "Just a moment..." / "Performing security
 //     verification"). Such a login throws a typed error with
 //     `code = 'CLOUDFLARE_BLOCKED'` (plus screenshot + details) so specs can
 //     report a clear incident instead of a confusing timeout.
-//   · For partners with a rotating numeric domain (cozbet002.com ->
+//   Â· For partners with a rotating numeric domain (cozbet002.com ->
 //     cozbet003.com ...) a Cloudflare block on one domain makes the login retry
 //     on the NEXT numeric domain in the real browser before giving up.
 //
@@ -61,7 +61,7 @@ async function isCloudflareChallenge(page, response) {
 async function cloudflareError(page, { partnerId, envName, device, status = null }) {
   const url = page.url();
   const err = new Error(
-    `Cloudflare blocked login for ${partnerId} [${envName}] (${status ?? 'challenge'} on ${url}) — ` +
+    `Cloudflare blocked login for ${partnerId} [${envName}] (${status ?? 'challenge'} on ${url}) â€” ` +
       `the site requires Cloudflare clearance/allowlisting for automation`,
   );
   err.code = CLOUDFLARE_BLOCKED;
@@ -127,7 +127,7 @@ export async function ensureEnvPlayerSession({
       lastError = err;
       if (err?.code === CLOUDFLARE_BLOCKED) lastCloudflareError = err;
       if (candidates.length > 1) {
-        console.log(`[envPlayerAuth] ${host}: ${err.code} → trying next domain`);
+        console.log(`[envPlayerAuth] ${host}: ${err.code} â†’ trying next domain`);
       }
     }
   }
@@ -145,7 +145,7 @@ export async function ensureEnvPlayerSession({
     unreachable: attemptsLog,
   };
   incident.message =
-    `Login blocked for ${partnerId} [${envName}] ${device} — ${summary}. ` +
+    `Login blocked for ${partnerId} [${envName}] ${device} â€” ${summary}. ` +
     (lastCloudflareError
       ? `Cloudflare challenge detected (${blockedDomains.join(', ')}); the site requires Cloudflare clearance/allowlisting for automation.`
       : `No reachable domain/server responded.`);
@@ -169,7 +169,6 @@ async function loginOnDomain({ browser, partnerId, envName, device, username, pa
     // /test.com?logDialog=1 or /smarticoClick();) and sometimes renders without
     // the form. Retry a few times until the form is present.
     let hasLoginForm = false;
-    let cfChallenges = 0;
     let lastStatus = null;
     for (let attempt = 1; attempt <= 4 && !hasLoginForm; attempt += 1) {
       await context.clearCookies().catch(() => {});
@@ -186,19 +185,34 @@ async function loginOnDomain({ browser, partnerId, envName, device, username, pa
         .waitFor({ state: 'visible', timeout: 8_000 })
         .then(() => true)
         .catch(() => false);
-      if (!hasLoginForm && (await isCloudflareChallenge(page, loginResponse))) cfChallenges += 1;
+      if (!hasLoginForm && (await isCloudflareChallenge(page, loginResponse))) {
+        // A Cloudflare challenge does not clear by retrying the same URL, so
+        // fail fast for THIS domain (the caller then tries the next numeric
+        // domain, and eventually skips the partner).
+        throw await cloudflareError(page, { partnerId, envName, device, status: lastStatus });
+      }
+      if (!hasLoginForm && /^(chrome-error:|about:blank)/.test(page.url())) {
+        // Unreachable domain — retrying cannot help; let the caller rotate to
+        // the next numeric domain (or report the incident) immediately.
+        const err = new Error(
+          `Domain unreachable for ${partnerId} [${envName}] ${device}: ${baseURL}`,
+        );
+        err.code = DOMAIN_UNREACHABLE;
+        err.details = { partnerId, envName, device, baseURL };
+        throw err;
+      }
       console.log(
         `[envPlayerAuth] login page attempt ${attempt} status=${lastStatus} ` +
           `url=${page.url()} form=${hasLoginForm}`,
       );
     }
     if (!hasLoginForm) {
-      // All attempts challenged by Cloudflare → report it as such.
-      if (cfChallenges === 4 || (await isCloudflareChallenge(page, null))) {
+      // All attempts challenged by Cloudflare â†’ report it as such.
+      if (await isCloudflareChallenge(page, null)) {
         throw await cloudflareError(page, { partnerId, envName, device, status: lastStatus });
       }
       // A rotating-domain candidate can simply be dead (DNS gone / connection
-      // refused) — mark it so the caller can try the next numeric domain.
+      // refused) â€” mark it so the caller can try the next numeric domain.
       if (/^(chrome-error:|about:blank)/.test(page.url())) {
         const err = new Error(`Domain unreachable for ${partnerId} [${envName}] ${device}: ${baseURL}`);
         err.code = DOMAIN_UNREACHABLE;
@@ -206,14 +220,14 @@ async function loginOnDomain({ browser, partnerId, envName, device, username, pa
         throw err;
       }
       throw new Error(
-        `Login form not found for ${partnerId} [${envName}] — last page was ${page.url()}`,
+        `Login form not found for ${partnerId} [${envName}] â€” last page was ${page.url()}`,
       );
     }
 
     await page.locator('#email, [automation="email_input"]').first().fill(username);
     await page.locator('#password, [automation="password_input"]').first().fill(password);
 
-    // Programmatic submit (no user gesture needed) — avoids overlay/pointer
+    // Programmatic submit (no user gesture needed) â€” avoids overlay/pointer
     // interception on the login page and is fast.
     await page
       .locator('#staticLoginButton, [automation="login_button"]')
@@ -243,7 +257,7 @@ async function loginOnDomain({ browser, partnerId, envName, device, username, pa
     ]);
     if (!loginOutcome) {
       // The login POST itself can be intercepted by Cloudflare (seen on Betfa:
-      // "Just a moment..." after submit) — report that as a CF block too.
+      // "Just a moment..." after submit) â€” report that as a CF block too.
       if (await isCloudflareChallenge(page, null)) {
         throw await cloudflareError(page, { partnerId, envName, device, status: null });
       }
