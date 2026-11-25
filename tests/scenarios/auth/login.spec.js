@@ -19,8 +19,12 @@ import { resolveRuntimeConfig } from '#src/config/index.js';
 import { requireStorageStatePath } from '#src/config/storageState.js';
 import { LOGGED_IN_MARKERS } from '#src/config/authMarkers.js';
 import { deviceLocator } from '#src/utils/device.js';
+import { attachTestRailCaseId } from '#support/testrail.js';
 
 const { envName, partnerId, partner } = await resolveRuntimeConfig();
+
+// TestRail case IDs for the login session check (separate web/mobile cases).
+const TESTRAIL_LOGIN_SESSION = { web: 'C27448', mobile: 'C27479' };
 
 // Session check: reuse the authenticated state captured by the auth setup
 // project for this project's device. Resolved at runtime from project metadata
@@ -36,7 +40,9 @@ test.describe('LOGIN [01]: session check (reused state)', () => {
   test(
     `LOGIN [01] SESSION check (reused state) · ${partner.displayName}`,
     { tag: ['@positive', '@smoke', '@regression'] },
-    async ({ runtime, page }) => {
+    async ({ runtime, page }, testInfo) => {
+      // Separate TestRail cases for web/mobile — attached per active project.
+      attachTestRailCaseId(testInfo, TESTRAIL_LOGIN_SESSION);
       await page.goto(runtime.baseURL, { waitUntil: 'domcontentloaded' });
       // (mobile). No login is performed here — only the restored session.
       await expect(deviceLocator(page, LOGGED_IN_MARKERS)).toBeVisible();

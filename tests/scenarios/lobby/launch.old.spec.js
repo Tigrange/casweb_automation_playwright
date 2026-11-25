@@ -19,6 +19,7 @@ import { buildLobbyData } from '#data/lobbyData.js';
 import { LobbyGamesLaunchOldPage } from '#src/pages/lobby/LobbyGamesLaunchOldPage.js';
 import { ensureEnvPlayerSession } from '#support/envPlayerAuth.js';
 import { skipOnCloudflare } from '#support/cloudflareEvidence.js';
+import { attachTestRailCaseId } from '#support/testrail.js';
 
 const { envName, partnerId, partner } = await resolveRuntimeConfig();
 const lobbyData = buildLobbyData(partnerId, envName);
@@ -27,6 +28,10 @@ const usesNewLobby = partner.lobbyNew === true;
 // partner's hardcoded PLAYER credentials from .env (e.g. TOTOGAMING_PROD_*).
 // Set LOBBY_USE_ENV_PLAYER=0 to rely on the auth-setup storage state instead.
 const useEnvPlayer = process.env.LOBBY_USE_ENV_PLAYER !== '0';
+
+// TestRail case IDs for LOBBY [01] (separate web/mobile cases). Fill when
+// the TestRail cases exist; null = nothing is attached.
+const TESTRAIL_LOBBY_PROVIDERS = { web: null, mobile: null };
 
 let sessionPromise;
 // One passing RGS provider is enough; remaining RGS providers are skipped.
@@ -59,7 +64,12 @@ test.describe('LOBBY [01] legacy design: provider game launch', () => {
     test(
       `LOBBY [01] legacy: launch ${provider.name} · ${partner.displayName}`,
       { tag: ['@positive', '@smoke'] },
-      async ({ runtime, page }) => {
+      async ({ runtime, page }, testInfo) => {
+        attachTestRailCaseId(testInfo, TESTRAIL_LOBBY_PROVIDERS);
+        // LOBBY [01] provider launch runs on desktop only: the mobile lobby
+        // selectors are still unverified (TODO verify mobile); LOBBY [02] and
+        // LOBBY [03] cover the mobile templates.
+        test.skip(testInfo.project.metadata.authDevice === 'mobile', 'LOBBY [01] provider launch runs on desktop only');
         if (kind === 'rgs' && rgsCovered) {
           test.skip(true, 'RGS coverage already satisfied by an earlier provider');
         }

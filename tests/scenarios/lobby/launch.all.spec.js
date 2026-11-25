@@ -1,4 +1,5 @@
-// LOBBY [03] - dynamic ALL-header-lobbys game-launch test.
+// LOBBY [03] - header lobby pages: launch the FIRST game of each lobby.
+// (LOBBY [02] in lobby.pages.open.spec.js only checks that the pages open.)
 //
 // Instead of a hardcoded per-partner lobby list, this spec DISCOVERS the lobby
 // pages from the site header at runtime, then for each lobby:
@@ -22,35 +23,21 @@
 // (test AND prod). Missing player JSON fails loudly - no .env fallback.
 // A Cloudflare block is reported as a labelled incident with evidence (see
 // tests/support/cloudflareEvidence.js).
-import { readFile } from 'node:fs/promises';
 import { test, expect } from '#src/fixtures/base.js';
 import { resolveRuntimeConfig } from '#src/config/index.js';
 import { storageStatePath } from '#src/config/storageState.js';
-import { playerPath } from '#src/config/players.js';
-import { LobbyGamesLaunchOldPage } from '#src/pages/lobby/LobbyGamesLaunchOldPage.js';
-import { LobbyGamesLaunchNewPage } from '#src/pages/lobby/LobbyGamesLaunchNewPage.js';
 import { ensureEnvPlayerSession } from '#support/envPlayerAuth.js';
 import { skipOnCloudflare } from '#support/cloudflareEvidence.js';
+import { readPlayer, discoverLobbys, detectLobbyPage, closeGamePages } from '#support/lobbyCommon.js';
+import { attachTestRailCaseId } from '#support/testrail.js';
 
 const { envName, partnerId, partner } = await resolveRuntimeConfig();
 
-let sessionPromise;
+// TestRail case IDs for LOBBY [03] (separate web/mobile cases). Fill when
+// the TestRail cases exist; null = nothing is attached.
+const TESTRAIL_LOBBY_FIRST_GAME = { web: null, mobile: null };
 
-/**
- * Read the player JSON for this env/partner/device. Fails loudly when missing.
- * @param {'desktop'|'mobile'} device
- */
-async function readPlayer(device) {
-  const file = playerPath(envName, partnerId, device);
-  try {
-    return JSON.parse(await readFile(file, 'utf8'));
-  } catch {
-    throw new Error(
-      `Missing player file for ${partnerId} [${envName}] ${device}: ${file}. ` +
-        `Create it from a valid account (tests/support/players) and re-run.`,
-    );
-  }
-}
+let sessionPromise;
 
 test.use({
   // Log in with the player JSON credentials and persist the session BEFORE the
@@ -59,7 +46,7 @@ test.use({
     const device = testInfo.project.metadata.authDevice ?? 'desktop';
     try {
       sessionPromise ??= (async () => {
-        const player = await readPlayer(device);
+        const player = await readPlayer(envName, partnerId, device);
         await ensureEnvPlayerSession({
           browser,
           partnerId,
@@ -77,88 +64,16 @@ test.use({
   },
 });
 
-/**
- * Collect the lobby page URLs from the header nav.
- *
- * Stable hook: header menu links (`a.js_menu_links`) whose href contains
- * `/lobby/`. Absolute and relative hrefs are both resolved; duplicates are
- * removed; provider deep-links (extra path segments after the lobby type) are
- * excluded.
- *
- * @param {import('@playwright/test').Page} page
- * @returns {Promise<string[]>} absolute lobby URLs
- */
-async function discoverLobbys(page) {
-  const hrefs = await page
-    .locator('a.js_menu_links[href*="/lobby/"]')
-    .evaluateAll((els) => els.map((el) => el.getAttribute('href')).filter(Boolean));
-
-  const urls = [];
-  const seen = new Set();
-  for (const href of hrefs) {
-    let resolved;
-    try {
-      resolved = new URL(href, page.url());
-    } catch {
-      continue;
-    }
-    // Lobby type page only: `/lobby/<type>` or `/lobby/<type>/main`
-    // (a language prefix like `/en` or `/hy` is fine before `/lobby/`).
-    if (!/\/lobby\/[^/]+(?:\/main)?\/?$/i.test(resolved.pathname)) continue;
-    const key = resolved.href.replace(/\/$/, '');
-    if (seen.has(key)) continue;
-    seen.add(key);
-    urls.push(resolved.href);
-  }
-  return urls;
-}
-
-/**
- * Detect the lobby design from the DOM and return the matching page object.
- * Returns `null` when the page is neither the legacy nor the widget lobby.
- *
- * @param {import('@playwright/test').Page} page
- * @returns {Promise<LobbyGamesLaunchOldPage|LobbyGamesLaunchNewPage|null>}
- */
-async function detectLobbyPage(page) {
-  const legacy = page.locator('#js_lobby_main_wrapper'); //detects the legacy lobby wrapper (desktop + mobile)
-  const widget = page.locator('#js_filter_button'); //widget-family lobby marker (Cozbet/TotoRo, desktop + mobile)
-
-  const outcome = await Promise.race([
-    legacy
-      .waitFor({ state: 'visible', timeout: 12_000 })
-      .then(() => 'legacy')
-      .catch(() => null),
-    widget
-      .waitFor({ state: 'visible', timeout: 12_000 })
-      .then(() => 'widget')
-      .catch(() => null),
-  ]);
-
-  if (outcome === 'legacy') return new LobbyGamesLaunchOldPage(page);
-  if (outcome === 'widget') return new LobbyGamesLaunchNewPage(page);
-  return null;
-}
-
-/** Close any popup/tab opened by a game launch (best effort, time-bounded). */
-async function closeGamePages(page) {
-  const extras = page.context().pages().filter((p) => p !== page && !p.isClosed());
-  if (!extras.length) return;
-  // Closing a live game tab can take minutes (busy page / pending unload), so
-  // never block the loop on it: race the closes against a short deadline.
-  const closing = Promise.all(extras.map((p) => p.close().catch(() => {})));
-  await Promise.race([closing, page.waitForTimeout(5_000)]).catch(() => {});
-}
-
-test.describe('LOBBY [03]: all header lobbys', () => {
+test.describe('LOBBY [03]: header lobby pages first game launch', () => {
   // The loop opens every discovered lobby and launches a game in each, so give
   // the whole test plenty of headroom (many lobbys x provider filter + launch).
   test.describe.configure({ mode: 'serial', timeout: 900_000 });
 
   test(
-    `LOBBY [03] all header lobbys · ${partner.displayName}`,
+    `LOBBY [03] header lobby pages first game · ${partner.displayName}`,
     { tag: ['@positive', '@regression'] },
     async ({ runtime, page }, testInfo) => {
+      attachTestRailCaseId(testInfo, TESTRAIL_LOBBY_FIRST_GAME);
       await page.goto(runtime.baseURL, { waitUntil: 'domcontentloaded' });
       // Guard against pathological waits so a single bad lobby cannot eat the
       // whole test budget (each game launch is verified with a short timeout).

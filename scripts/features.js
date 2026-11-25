@@ -92,7 +92,9 @@ export const FEATURES = {
   lobby: {
     spec: 'tests/scenarios/lobby',
     label: 'lobby',
-    phases: [{ name: 'e2e', projects: ['e2e-chromium'] }], // TODO: switch back to E2E_PHASE once verified players are produced by setup.
+    // Desktop + mobile: both devices run sequentially per partner (same player
+    // account — the platform allows only one active session).
+    phases: [{ name: 'e2e', projects: ['e2e-chromium', 'e2e-mobile-chromium'] }],
     enabled: false,
     noDeps: true
   },
@@ -103,7 +105,8 @@ export const FEATURES = {
   lobbyPages: {
     spec: 'tests/scenarios/lobby/launch.all.spec.js',
     label: 'lobby-pages-redirection-and-launch',
-    phases: [{ name: 'e2e', projects: ['e2e-chromium'] }],
+    // Desktop + mobile (sequential per partner — one active session per player).
+    phases: [{ name: 'e2e', projects: ['e2e-chromium', 'e2e-mobile-chromium'] }],
     noDeps: true,
     enabled: false,
   },
