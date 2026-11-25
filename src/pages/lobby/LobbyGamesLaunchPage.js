@@ -293,7 +293,7 @@ export class LobbyGamesLaunchPage extends BasePage {
         this.page.waitForTimeout(8_000).then(() => null),
       ]);
       this.activePage = popup || this.page;
-    } else {
+    } else if (await play.count()) {
       // Fallback for JS-only play buttons: real user-gesture click first so a
       // provider calling window.open is not popup-blocked.
       try {
@@ -308,6 +308,50 @@ export class LobbyGamesLaunchPage extends BasePage {
       }
       const popup = await popupPromise;
       this.activePage = popup || this.page;
+    } else {
+      // No play element and no href (mobile widget cards): tapping the card is
+      // the launch action. The widget re-renders its sliders, so a single click
+      // can no-op on a detached card — retry and verify that a navigation or a
+      // popup actually happened before continuing.
+      const beforeUrl = this.page.url();
+      const attempts = [
+        () => card.click({ timeout: 10_000 }),
+        async () => {
+          await this.dismissOverlays();
+          await card.click({ timeout: 10_000, force: true });
+        },
+        () => card.evaluate((el) => el.click()),
+      ];
+      let activated = false;
+      for (const attempt of attempts) {
+        try {
+          await attempt();
+        } catch {
+          // try the next activation strategy
+        }
+        const outcome = await Promise.race([
+          popupPromise,
+          this.page
+            .waitForURL((url) => url.href !== beforeUrl, { timeout: 5_000 })
+            .then(() => 'navigated')
+            .catch(() => null),
+        ]);
+        if (outcome && typeof outcome !== 'string') {
+          this.activePage = outcome; // popup opened
+          activated = true;
+          break;
+        }
+        if (outcome === 'navigated' || this.page.url() !== beforeUrl) {
+          this.activePage = this.page;
+          activated = true;
+          break;
+        }
+      }
+      if (!activated) {
+        throw new Error(
+          `Tapping the game card did not open the game (still on ${this.page.url()})`,
+        );
+      }
     }
 
     try {
