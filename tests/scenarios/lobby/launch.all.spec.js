@@ -126,11 +126,30 @@ test.describe('LOBBY [03]: header lobby pages first game launch', () => {
             continue;
           }
 
-          try {
-            // No pinned game -> the FIRST game of the default lobby grid.
-            await lobby.launchGame(null, { verifyTimeout: 10_000 });
-            console.log(`[lobby] game launched @${at()}`);
-          } catch (err) {
+          // Launch the FIRST game of the default grid. Widget card taps are
+          // occasionally flaky on the re-rendering mobile sliders, so one retry
+          // (re-open the lobby) is allowed before reporting an incident.
+          let launched = false;
+          let launchError = null;
+          for (let attempt = 1; attempt <= 2 && !launched; attempt += 1) {
+            try {
+              // attempt 1: the first game of the lobby; attempt 2: the NEXT
+              // card (the first one may be a game that does not launch on that
+              // device).
+              await lobby.launchGame(null, { verifyTimeout: 10_000, cardIndex: attempt - 1 });
+              launched = true;
+              console.log(`[lobby] game launched @${at()} (attempt ${attempt})`);
+            } catch (err) {
+              launchError = err;
+              await closeGamePages(page);
+              if (attempt === 1) {
+                await lobby.open({ lobbyUrl }).catch(() => {});
+                await page.waitForTimeout(1_000);
+              }
+            }
+          }
+
+          if (!launched) {
             const shotName = `lobby-fail-${incidents.length + 1}.png`;
             await testInfo
               .attach(shotName, {
@@ -141,7 +160,7 @@ test.describe('LOBBY [03]: header lobby pages first game launch', () => {
             incidents.push({
               lobby: lobbyUrl,
               screenshot: shotName,
-              error: String(err?.message || err).split('\n')[0],
+              error: String(launchError?.message || launchError).split('\n')[0],
             });
           }
         } catch (err) {

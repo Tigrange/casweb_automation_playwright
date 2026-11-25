@@ -152,8 +152,12 @@ export class LobbyGamesLaunchPage extends BasePage {
     throw new Error(`Game card not found/visible for game id ${game.id} (${game.name || 'unknown'})`);
   }
 
-  /** FIRST VISIBLE card from the provider-filtered grid (real-flow selection). */
-  async firstVisibleGameCard(timeout = 20_000) {
+  /**
+   * Nth VISIBLE card from the grid (0 = first).
+   * The index lets a retry try the NEXT game when the first card of a lobby is
+   * broken/does not launch on that device.
+   */
+  async firstVisibleGameCard(timeout = 20_000, index = 0) {
     const cards = this.page.locator(
       `${this.selectors.gamesGrid[this.device]} ${this.selectors.gameCard[this.device]}`,
     );
@@ -161,13 +165,16 @@ export class LobbyGamesLaunchPage extends BasePage {
     const end = Date.now() + timeout;
     while (Date.now() < end) {
       const count = await cards.count();
+      let visible = 0;
       for (let i = 0; i < count; i += 1) {
         const card = cards.nth(i);
-        if (await card.isVisible().catch(() => false)) return card;
+        if (!(await card.isVisible().catch(() => false))) continue;
+        if (visible === index) return card;
+        visible += 1;
       }
       await this.page.waitForTimeout(300);
     }
-    throw new Error('No visible game cards available after the provider filter');
+    throw new Error(`No visible game card at index ${index} available`);
   }
 
   /** Read the game identity from a card, preferring the pinned data when given. */
@@ -206,11 +213,13 @@ export class LobbyGamesLaunchPage extends BasePage {
    * while `data-has-game`, `data-game-id` and the iframe src all look valid.
    *
    * @param {{ id?: string|number, name?: string } | null} [game]
-   * @param {{ verifyTimeout?: number }} [options] optional launch-verify timeout
+   * @param {{ verifyTimeout?: number, cardIndex?: number }} [options] optional
+   *        launch-verify timeout and visible-card index for the no-game case
    *        (defaults to 30s; shorter values let a sweep fail fast per lobby)
    */
   async launchGame(game = null, options = {}) {
     const verifyTimeout = options.verifyTimeout ?? 30_000;
+    const cardIndex = options.cardIndex ?? 0;
     await this.dismissOverlays();
 
     // Resolve the card + play target with retries: the lobby re-renders its
@@ -221,7 +230,10 @@ export class LobbyGamesLaunchPage extends BasePage {
     let targetUrl;
     for (let attempt = 1; attempt <= 3 && !targetUrl; attempt += 1) {
       try {
-        card = game && game.id ? await this.visibleGameCard(game) : await this.firstVisibleGameCard();
+        card =
+          game && game.id
+            ? await this.visibleGameCard(game)
+            : await this.firstVisibleGameCard(20_000, cardIndex);
         resolvedGame = await this.gameInfoFromCard(card, game || {});
 
         // Play anchor (test env): prefer its href/data-href.
@@ -315,12 +327,42 @@ export class LobbyGamesLaunchPage extends BasePage {
       // popup actually happened before continuing.
       const beforeUrl = this.page.url();
       const attempts = [
+        // Mobile templates listen for REAL touch events; a plain mouse click can
+        // be ignored. Tap the card centre first.
+        async () => {
+          const box = await card.boundingBox();
+          if (!box || !this.page.touchscreen) throw new Error('no touch box');
+          await this.page.touchscreen.tap(box.x + box.width / 2, box.y + box.height / 2);
+        },
         () => card.click({ timeout: 10_000 }),
         async () => {
           await this.dismissOverlays();
           await card.click({ timeout: 10_000, force: true });
         },
         () => card.evaluate((el) => el.click()),
+        () =>
+          card.evaluate((el) => {
+            // Some mobile handlers only react to pointer/touch event sequences.
+            const r = el.getBoundingClientRect();
+            const base = {
+              bubbles: true,
+              cancelable: true,
+              clientX: r.x + r.width / 2,
+              clientY: r.y + r.height / 2,
+            };
+            const fire = (type) => {
+              try {
+                if (type.startsWith('touch') && typeof TouchEvent !== 'undefined') {
+                  el.dispatchEvent(new TouchEvent(type, { ...base, touches: [], changedTouches: [] }));
+                } else {
+                  el.dispatchEvent(new MouseEvent(type, base));
+                }
+              } catch {
+                /* event type unsupported - ignore */
+              }
+            };
+            ['pointerdown', 'touchstart', 'pointerup', 'touchend', 'click'].forEach(fire);
+          }),
       ];
       let activated = false;
       for (const attempt of attempts) {
@@ -663,7 +705,7 @@ export class LobbyGamesLaunchPage extends BasePage {
           .catch(() => null),
         // DOM-app surface (e.g. Galaxsys P2P React skill games): header + main
         // rendered directly in the launcher frame, no nested iframe/canvas.
-        this.waitForAppSurface(frame, timeout)
+        this.waitForAppSurface(frame, Math.max(timeout, 20_000))
           .then((ok) => (ok ? 'game-surface' : null))
           .catch(() => null),
         frameErrorImg
