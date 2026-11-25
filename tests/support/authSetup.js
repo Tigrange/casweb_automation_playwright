@@ -29,7 +29,7 @@
 // hard-coded and partner-specific popups keep working.
 
 import { test, expect } from '@playwright/test';
-import { writeFile, readFile } from 'node:fs/promises';
+import { writeFile, readFile, rm } from 'node:fs/promises';
 import { PARTNERS } from '#src/config/partners.js';
 import { getLoginPopup } from '#src/factories/loginRegistry.js';
 import { storageStatePath } from '#src/config/storageState.js';
@@ -81,15 +81,33 @@ export function defineAuthSetup(device) {
           // Reuse the hardcoded player kept in tests/support/players/. Fail loudly
           // if it is missing so dependent e2e projects skip rather than silently
           // run unauthenticated.
-          const player = JSON.parse(
-            await readFile(playerPath(envName, partner.id, device), 'utf8'),
-          );
+          const playerFile = playerPath(envName, partner.id, device);
+          const player = JSON.parse(await readFile(playerFile, 'utf8'));
+
+          // Remove any storage state from a PREVIOUS successful run BEFORE the
+          // attempt: when this login fails, the stale session must not survive
+          // (otherwise the session-check spec reuses an old file and "passes"
+          // even though the current credentials are broken).
+          const stateFile = storageStatePath(envName, partner.id, device);
+          await rm(stateFile, { force: true }).catch(() => {});
 
           const login = getLoginPopup(page, partnerId);
           await page.goto(baseURL, { waitUntil: 'domcontentloaded' });
           await login.open();
           await login.login(player.username, player.password);
-          await login.expectLoggedIn();
+          try {
+            // Fails fast with the server message when the credentials are wrong
+            // (or a CAPTCHA/lock is shown) instead of waiting for the form to
+            // close until the test timeout.
+            await login.expectLoginOutcome();
+          } catch (err) {
+            throw new Error(
+              `[auth] ${err.message}\n` +
+                `  player: ${player.username}\n` +
+                `  file:   ${playerFile}\n` +
+                `  partner: ${partnerId} [${envName}] · ${device}`,
+            );
+          }
           // Confirm the session is really authenticated before persisting it.
           await expect(page.locator(marker)).toBeVisible();
 

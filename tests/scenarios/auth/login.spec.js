@@ -32,6 +32,10 @@ const TESTRAIL_LOGIN_SESSION = { web: 'C27448', mobile: 'C27479' };
 test.describe('LOGIN [01]: session check (reused state)', () => {
   test.use({
     storageState: async ({}, use, testInfo) => {
+      // Attach the TestRail case ID BEFORE any setup work: when the fixture
+      // fails (e.g. missing storage state), the annotation must still exist so
+      // the failed result is uploaded to TestRail.
+      attachTestRailCaseId(testInfo, TESTRAIL_LOGIN_SESSION);
       const device = testInfo.project.metadata.authDevice ?? 'desktop';
       await use(requireStorageStatePath(envName, partnerId, device));
     },
@@ -40,9 +44,7 @@ test.describe('LOGIN [01]: session check (reused state)', () => {
   test(
     `LOGIN [01] SESSION check (reused state) · ${partner.displayName}`,
     { tag: ['@positive', '@smoke', '@regression'] },
-    async ({ runtime, page }, testInfo) => {
-      // Separate TestRail cases for web/mobile — attached per active project.
-      attachTestRailCaseId(testInfo, TESTRAIL_LOGIN_SESSION);
+    async ({ runtime, page }) => {
       await page.goto(runtime.baseURL, { waitUntil: 'domcontentloaded' });
       // (mobile). No login is performed here — only the restored session.
       await expect(deviceLocator(page, LOGGED_IN_MARKERS)).toBeVisible();

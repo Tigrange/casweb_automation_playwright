@@ -43,6 +43,9 @@ test.use({
   // Log in with the player JSON credentials and persist the session BEFORE the
   // test context is created (same pattern as the other lobby specs).
   storageState: async ({ browser }, use, testInfo) => {
+    // Attach the TestRail case ID BEFORE setup: a fixture failure (missing
+    // player, Cloudflare skip) must still be reported to TestRail.
+    attachTestRailCaseId(testInfo, TESTRAIL_LOBBY_FIRST_GAME);
     const device = testInfo.project.metadata.authDevice ?? 'desktop';
     try {
       sessionPromise ??= (async () => {
@@ -73,7 +76,6 @@ test.describe('LOBBY [03]: header lobby pages first game launch', () => {
     `LOBBY [03] header lobby pages first game · ${partner.displayName}`,
     { tag: ['@positive', '@regression'] },
     async ({ runtime, page }, testInfo) => {
-      attachTestRailCaseId(testInfo, TESTRAIL_LOBBY_FIRST_GAME);
       await page.goto(runtime.baseURL, { waitUntil: 'domcontentloaded' });
       // Guard against pathological waits so a single bad lobby cannot eat the
       // whole test budget (each game launch is verified with a short timeout).

@@ -83,6 +83,35 @@ export class LoginPopup extends BasePage {
     await this.depositTrigger.waitFor({ state: 'visible' });
   }
 
+  /**
+   * Wait for the login outcome: SUCCESS (dialog closed + deposit trigger
+   * visible) or FAILURE (the error message is shown, e.g. wrong credentials or
+   * a CAPTCHA requirement). Fails fast with the server message instead of
+   * waiting for the success condition until the test timeout.
+   */
+  async expectLoginOutcome() {
+    const outcome = await Promise.race([
+      this.container
+        .waitFor({ state: 'hidden' })
+        .then(() => 'success')
+        .catch(() => null),
+      this.errorMessage
+        .waitFor({ state: 'visible' })
+        .then(() => 'error')
+        .catch(() => null),
+    ]);
+
+    if (outcome === 'success') return;
+
+    const detail = outcome === 'error'
+      ? (await this.errorMessage.innerText({ timeout: 2_000 }).catch(() => '')).trim()
+      : '';
+    throw new Error(
+      `Login rejected${detail ? `: ${detail}` : ''} — check the credentials ` +
+        `(wrong password, CAPTCHA or a locked account)`,
+    );
+  }
+
   async expectErrorVisible() {
     await this.errorMessage.waitFor({ state: 'visible' });
   }

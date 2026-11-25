@@ -300,14 +300,22 @@ export async function runAllPartners({ spec, label, phases, defaultProjects, noD
       // Emit a mergeable blob (embeds errors, traces, screenshots, videos and
       // other attachments) into this unit's own dir; a per-unit dir is required
       // because the blob reporter wipes its output dir on each process start.
-      args.push('--reporter=blob', `--output=${artifactDir}`, ...passThrough);
+      // ALSO emit a JSON report: scripts/publish-testrail.mjs reads it (it
+      // carries the per-device testrail_case_id annotations).
+      args.push('--reporter=blob,json', `--output=${artifactDir}`, ...passThrough);
+      const jsonResultsFile = `${paths.root}/results-${partnerId}-${unit.name}.json`;
       if (workers !== undefined) args.push(`--workers=${workers}`);
       // Belt-and-suspenders: skip project dependencies so a feature that does
       // not need auth (register) never triggers an auth project.
       if (noDeps) args.push('--no-deps');
 
       const status = await spawnPrefixed(args, {
-        env: { ...baseEnv, PARTNER: partnerId, PLAYWRIGHT_BLOB_OUTPUT_DIR: blobDir },
+        env: {
+          ...baseEnv,
+          PARTNER: partnerId,
+          PLAYWRIGHT_BLOB_OUTPUT_DIR: blobDir,
+          PLAYWRIGHT_JSON_OUTPUT_NAME: jsonResultsFile,
+        },
         prefix: `[${partnerId}:${unit.name}]`,
       });
       records.push({ partnerId, unit: unit.name, blobDir, status });

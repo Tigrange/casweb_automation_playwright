@@ -41,6 +41,9 @@ test.use({
   // The login happens INSIDE the storageState fixture so the file exists before
   // Playwright creates the test context (a beforeAll runs too late for prod).
   storageState: async ({ browser }, use, testInfo) => {
+    // Attach the TestRail case ID BEFORE setup: a fixture failure must still be
+    // reported to TestRail.
+    attachTestRailCaseId(testInfo, TESTRAIL_LOBBY_PROVIDERS);
     const device = testInfo.project.metadata.authDevice ?? 'desktop';
     const path = storageStatePath(envName, partnerId, device, useEnvPlayer ? 'envplayer' : undefined);
     if (useEnvPlayer) {
@@ -65,7 +68,6 @@ test.describe('LOBBY [01] legacy design: provider game launch', () => {
       `LOBBY [01] legacy: launch ${provider.name} · ${partner.displayName}`,
       { tag: ['@positive', '@smoke'] },
       async ({ runtime, page }, testInfo) => {
-        attachTestRailCaseId(testInfo, TESTRAIL_LOBBY_PROVIDERS);
         // LOBBY [01] provider launch runs on desktop only: the mobile lobby
         // selectors are still unverified (TODO verify mobile); LOBBY [02] and
         // LOBBY [03] cover the mobile templates.

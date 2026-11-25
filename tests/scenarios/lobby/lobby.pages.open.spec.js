@@ -32,6 +32,9 @@ test.use({
   // Log in with the player JSON credentials and persist the session BEFORE the
   // test context is created (same pattern as the other lobby specs).
   storageState: async ({ browser }, use, testInfo) => {
+    // Attach the TestRail case ID BEFORE setup: a fixture failure (missing
+    // player, Cloudflare skip) must still be reported to TestRail.
+    attachTestRailCaseId(testInfo, TESTRAIL_LOBBY_PAGES_OPEN);
     const device = testInfo.project.metadata.authDevice ?? 'desktop';
     try {
       sessionPromise ??= (async () => {
@@ -59,8 +62,7 @@ test.describe('LOBBY [02]: header lobby pages open', () => {
   test(
     `LOBBY [02] header lobby pages open · ${partner.displayName}`,
     { tag: ['@positive', '@regression'] },
-    async ({ runtime, page }, testInfo) => {
-      attachTestRailCaseId(testInfo, TESTRAIL_LOBBY_PAGES_OPEN);
+    async ({ runtime, page }) => {
       await page.goto(runtime.baseURL, { waitUntil: 'domcontentloaded' });
       page.setDefaultTimeout(15_000);
       page.setDefaultNavigationTimeout(45_000);
