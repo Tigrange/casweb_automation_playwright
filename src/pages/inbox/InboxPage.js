@@ -80,8 +80,14 @@ export class InboxPage extends BasePage {
     if (this.device === 'mobile') {
       await this.accountMenuTrigger.evaluate((el) => el.click());
     }
+    // Desktop renders the inbox content only AFTER its AJAX request returns
+    // (…/account/inbox?_=…). Wait for that response, then for the container.
+    const inboxLoad = this.page
+      .waitForResponse((r) => /\/account\/inbox/i.test(r.url()), { timeout: 20_000 })
+      .catch(() => null);
     await this.openTrigger.evaluate((el) => el.click());
-    await expect(this.container).toBeVisible();
+    await inboxLoad;
+    await this.container.waitFor({ state: 'visible', timeout: 20_000 });
   }
 
   /** @returns {Promise<boolean>} whether the send composer is available. */
@@ -100,7 +106,17 @@ export class InboxPage extends BasePage {
     if (attachmentPath) {
       await this.fileInput.setInputFiles(attachmentPath);
     }
+    // The message list refreshes after the send request completes; wait for the
+    // POST response (best-effort URL match — the exact endpoint differs per
+    // partner) so the following assertions see the refreshed list.
+    const sendDone = this.page
+      .waitForResponse(
+        (r) => /(inbox|message|msg)/i.test(r.url()) && r.request().method() === 'POST',
+        { timeout: 30_000 },
+      )
+      .catch(() => null);
     await this.sendButton.evaluate((el) => el.click());
+    await sendDone;
   }
 
   /**
@@ -114,7 +130,7 @@ export class InboxPage extends BasePage {
    */
   async expectMessageCreated({ subject, message, attachmentName }) {
     const row = this.items.filter({ hasText: subject }).first();
-    await expect(row).toBeVisible();
+    await expect(row).toBeVisible({ timeout: 30_000 });
 
     if (this.device === 'mobile') return;
 

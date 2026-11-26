@@ -112,6 +112,63 @@ export class ChangePasswordPage extends BasePage {
   async expectSuccessVisible() {
     await expect(this.successMessage).not.toBeEmpty();
   }
+
+  /**
+   * Wait for the outcome of a submitted change: SUCCESS confirmation, an error
+   * message, or neither within the given time.
+   *
+   * Never rely on the success message alone: partner templates differ (e.g. the
+   * Manoto success markup is not matched by the shared selector), and treating
+   * "no success message" as "no change" can LOSE the new password (the account
+   * has it, the player file does not).
+   *
+   * @param {number} [timeout]
+   * @returns {Promise<{ outcome: 'success'|'error'|'unknown', detail: string }>}
+   */
+  async outcome(timeout = 20_000) {
+    const found = await Promise.race([
+      this.successMessage
+        .first()
+        .waitFor({ state: 'visible', timeout })
+        .then(() => 'success')
+        .catch(() => null),
+      // Success often means the form/redirect replaces the view: a hidden form
+      // WITHOUT an error message is a success signal (a rejected change keeps
+      // the form visible with the validation error).
+      this.changePasswordForm
+        .first()
+        .waitFor({ state: 'hidden', timeout })
+        .then(() => 'form-hidden')
+        .catch(() => null),
+      this.validationError
+        .first()
+        .waitFor({ state: 'visible', timeout })
+        .then(() => 'error')
+        .catch(() => null),
+    ]);
+
+    if (found === 'success' || found === 'form-hidden') {
+      // Confirm it is not actually an error that appeared at the same time.
+      const errorVisible = await this.validationError
+        .first()
+        .isVisible()
+        .catch(() => false);
+      if (!errorVisible) return { outcome: 'success', detail: '' };
+    }
+    if (found === 'error' || (await this.validationError.first().isVisible().catch(() => false))) {
+      const detail = (
+        await this.validationError
+          .first()
+          .innerText({ timeout: 2_000 })
+          .catch(() => '')
+      )
+        .trim()
+        .replace(/\s+/g, ' ');
+      return { outcome: 'error', detail };
+    }
+    return { outcome: 'unknown', detail: '' };
+  }
+
   /** Wait until a password validation/mismatch error is shown. */
   async expectMismatchErrorVisible() {
     await expect(this.validationError).not.toBeEmpty();

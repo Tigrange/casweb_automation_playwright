@@ -89,8 +89,8 @@ function collectCases(report) {
               ? 'skipped'
               : 'failed';
         const skipAnn = annotations.find((a) => a.type === 'skip');
-        const reason = skipAnn?.description || (result.error?.message ?? '').split('\n')[0];
-        const title = `${suite.title ? `${suite.title} › ` : ''}${spec.title}`;
+        const reason = skipAnn?.description || result.error?.message || '';
+        const title = spec.title;
         const device = /mobile/i.test(test.projectName ?? '') ? 'mobile' : 'web';
 
         out.push({
@@ -203,37 +203,59 @@ if (appendRunId) {
   });
 }
 
-/** First line of a raw error, without the "Error:" prefix and stack noise. */
-function shortError(raw) {
-  return String(raw || '')
-    .replace(/^Error:\s*/i, '')
-    .split('\n')[0]
-    .trim()
-    .slice(0, 200);
+/** Parse the useful fields out of a Playwright error message. */
+function parseError(raw) {
+  const clean = String(raw || '').replace(/\u001b\[[0-9;]*m/g, '');
+  const lines = clean
+    .split('\n')
+    .map((l) => l.trim())
+    .filter(Boolean);
+  const first = (lines[0] || '').replace(/^Error:\s*/i, '');
+  const locatorLine = lines.find((l) => /^Locator:/i.test(l)) || '';
+  // locator('#id').first() -> #id
+  const locatorMatch = locatorLine.match(/locator\((['"])(.*?)\1\)/);
+  const locator = locatorMatch
+    ? locatorMatch[2]
+    : locatorLine.replace(/^Locator:\s*/i, '').replace(/^locator\(|\)\..*$/g, '');
+  const timeout = (lines.find((l) => /^Timeout:/i.test(l)) || '').replace(/^Timeout:\s*/i, '');
+  return { first, locator, timeout };
 }
 
-/** Human-readable TestRail comment for a result. */
+/** Short human-readable description of a failed step. */
+function describeFailure(raw) {
+  const { first, locator, timeout } = parseError(raw);
+  const seconds = timeout ? timeout.replace(/ms$/i, '').trim() : '';
+  const waited = seconds && /^\d+$/.test(seconds) ? ` (${Math.round(Number(seconds) / 1000)}s)` : '';
+  if (locator && /toBeVisible/.test(first)) return `element not visible: ${locator}${waited}`;
+  if (locator && /(evaluate|click|fill|setInputFiles)/.test(first)) {
+    return `element not ready: ${locator}${waited}`;
+  }
+  return (first || 'see the Playwright report').slice(0, 160);
+}
+
+/** Short TestRail comment (no repeated title, max ~200 chars). */
 function commentFor(c) {
   const base = `Automation ${c.status.toUpperCase()} (${c.device})`;
   if (c.status === 'passed') return base;
 
   const raw = c.reason || '';
-  if (c.status === 'skipped') return `${base}: ${shortError(raw) || 'skipped'}`;
+  let detail;
+  if (c.status === 'skipped') {
+    detail = `skipped: ${describeFailure(raw)}`;
+  } else if (/No storage state found/i.test(raw)) {
+    detail = 'login session missing (run the auth setup first)';
+  } else if (/Login rejected/i.test(raw)) {
+    detail = `login rejected: ${describeFailure(raw)}`;
+  } else if (/Cloudflare/i.test(raw)) {
+    detail = 'Cloudflare blocked the site (needs allowlisting)';
+  } else if (/timed out|Timeout .*exceeded/i.test(raw)) {
+    detail = 'test timed out';
+  } else {
+    detail = describeFailure(raw);
+  }
 
-  // failed:
-  if (/No storage state found/i.test(raw)) {
-    return `${base}: login session missing — the login setup did not run or failed for this partner/device`;
-  }
-  if (/Login rejected/i.test(raw)) {
-    return `${base}: site rejected the login — ${shortError(raw)}`;
-  }
-  if (/Cloudflare/i.test(raw)) {
-    return `${base}: Cloudflare blocked the site — needs allowlisting`;
-  }
-  if (/timed out|Timeout .*exceeded/i.test(raw)) {
-    return `${base}: test timed out`;
-  }
-  return `${base}: ${shortError(raw) || 'see the Playwright report'}`;
+  const text = `${base}: ${c.title} - ${detail}`;
+  return text.length > 220 ? `${text.slice(0, 217)}...` : text;
 }
 
 const results = cases.map((c) => ({
@@ -263,7 +285,8 @@ function resolveAttachmentsDir() {
 
 async function uploadAttachment(resultId, filePath, fileName) {
   const form = new FormData();
-  form.append('attachment', new Blob([fs.readFileSync(filePath)]), fileName);
+  const mime = /\.png$/i.test(fileName) ? 'image/png' : 'application/octet-stream';
+  form.append('attachment', new Blob([fs.readFileSync(filePath)], { type: mime }), fileName);
   const res = await fetch(`${baseUrl}/index.php?/api/v2/add_attachment_to_result/${resultId}`, {
     method: 'POST',
     headers: { Authorization: `Basic ${auth}` },
@@ -305,10 +328,15 @@ for (let i = 0; i < cases.length; i += 1) {
       continue;
     }
     try {
-      const info = await uploadAttachment(resultId, filePath, shot.name || path.basename(filePath));
+      const safeTitle = String(c.title || 'failure')
+        .replace(/[^a-z0-9]+/gi, '-')
+        .replace(/^-+|-+$/g, '')
+        .slice(0, 60);
+      const fileName = `${safeTitle}-${c.device}.png`;
+      const info = await uploadAttachment(resultId, filePath, fileName);
       uploadedAttachments += 1;
       console.log(
-        `[testrail] attached ${shot.name || path.basename(filePath)} to C${c.caseId} ` +
+        `[testrail] attached ${fileName} to C${c.caseId} ` +
           `(result ${resultId}, attachment ${info?.attachment_id ?? '?'})`,
       );
     } catch (err) {

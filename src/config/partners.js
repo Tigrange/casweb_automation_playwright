@@ -106,10 +106,10 @@ export const PARTNERS = {
         baseURL: 'https://manotobet.tst-digi.com/',
         credsEnvPrefix: 'MANOTO_TST',
       },
-      // prod: {
-      //   baseURL: 'https://manotobet.com/',
-      //   credsEnvPrefix: 'MANOTO',
-      // },
+      prod: {
+        baseURL: 'https://manotobet.com/',
+        credsEnvPrefix: 'MANOTO',
+      },
     },
     features: { casino: true, betting: true, inbox: true },
     cashierNew: false,
