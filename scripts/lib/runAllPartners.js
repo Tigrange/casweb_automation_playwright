@@ -62,7 +62,7 @@
 //   -- <playwright args>        everything after `--` is forwarded untouched
 
 import { spawn, spawnSync } from 'node:child_process';
-import { copyFileSync, existsSync, mkdirSync, readdirSync, rmSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { listPartners } from '../../src/config/partners.js';
 import { TEST_TYPES, TEST_TAGS } from '../../src/config/testFilters.js';
 import { getArtifactPaths } from './artifacts.js';
@@ -319,6 +319,15 @@ export async function runAllPartners({ spec, label, phases, defaultProjects, noD
         prefix: `[${partnerId}:${unit.name}]`,
       });
       records.push({ partnerId, unit: unit.name, blobDir, status });
+
+      // Sidecar for scripts/publish-testrail.mjs: where the raw attachments
+      // (screenshots) of this run live, so failed cases can be uploaded to
+      // TestRail with zero extra configuration.
+      try {
+        writeFileSync(`${jsonResultsFile}.artifacts`, artifactDir);
+      } catch {
+        /* non-fatal */
+      }
 
       // Safety: if a phase failed, do NOT continue this partner's remaining
       // phases. Avoids hammering an account whose auth just failed.

@@ -36,6 +36,11 @@ const runName = runNameArg ? runNameArg.slice('--run-name='.length) : null;
 const runIdArg = args.find((a) => a.startsWith('--testrail-run-id='));
 const appendRunId = runIdArg ? Number(runIdArg.slice('--testrail-run-id='.length)) : null;
 const resultsFile = args.find((a) => !a.startsWith('--')) || 'results.json';
+// Folder that holds the raw test artifacts (screenshots). The runner writes a
+// "<results>.artifacts" sidecar file with the exact directory, so manual runs
+// usually need no extra flag.
+const attachDirArg = args.find((a) => a.startsWith('--attachments-dir='));
+const attachmentsDirArg = attachDirArg ? attachDirArg.slice('--attachments-dir='.length) : null;
 
 const required = ['TESTRAIL_URL', 'TESTRAIL_USER', 'TESTRAIL_API_KEY', 'TESTRAIL_PROJECT_ID', 'TESTRAIL_SUITE_ID'];
 const missing = required.filter((k) => !process.env[k]);
@@ -86,12 +91,19 @@ function collectCases(report) {
         const skipAnn = annotations.find((a) => a.type === 'skip');
         const reason = skipAnn?.description || (result.error?.message ?? '').split('\n')[0];
         const title = `${suite.title ? `${suite.title} › ` : ''}${spec.title}`;
+        const device = /mobile/i.test(test.projectName ?? '') ? 'mobile' : 'web';
 
         out.push({
           caseId: String(caseIdAnn.description).replace(/^C/i, ''),
           status,
           title,
           reason,
+          device,
+          attachments: (result.attachments ?? []).map((a) => ({
+            name: a.name,
+            contentType: a.contentType,
+            file: a.path,
+          })),
         });
       }
     }
@@ -191,14 +203,44 @@ if (appendRunId) {
   });
 }
 
-const results = cases.map((c) => {
-  const statusId = STATUS[c.status] ?? STATUS.blocked;
-  const comment =
-    c.status === 'passed'
-      ? 'Automation: passed'
-      : `Automation: ${c.status}${c.reason ? ` — ${c.reason}` : ''}`;
-  return { case_id: Number(c.caseId), status_id: statusId, comment };
-});
+/** First line of a raw error, without the "Error:" prefix and stack noise. */
+function shortError(raw) {
+  return String(raw || '')
+    .replace(/^Error:\s*/i, '')
+    .split('\n')[0]
+    .trim()
+    .slice(0, 200);
+}
+
+/** Human-readable TestRail comment for a result. */
+function commentFor(c) {
+  const base = `Automation ${c.status.toUpperCase()} (${c.device})`;
+  if (c.status === 'passed') return base;
+
+  const raw = c.reason || '';
+  if (c.status === 'skipped') return `${base}: ${shortError(raw) || 'skipped'}`;
+
+  // failed:
+  if (/No storage state found/i.test(raw)) {
+    return `${base}: login session missing — the login setup did not run or failed for this partner/device`;
+  }
+  if (/Login rejected/i.test(raw)) {
+    return `${base}: site rejected the login — ${shortError(raw)}`;
+  }
+  if (/Cloudflare/i.test(raw)) {
+    return `${base}: Cloudflare blocked the site — needs allowlisting`;
+  }
+  if (/timed out|Timeout .*exceeded/i.test(raw)) {
+    return `${base}: test timed out`;
+  }
+  return `${base}: ${shortError(raw) || 'see the Playwright report'}`;
+}
+
+const results = cases.map((c) => ({
+  case_id: Number(c.caseId),
+  status_id: STATUS[c.status] ?? STATUS.blocked,
+  comment: commentFor(c),
+}));
 
 const posted = await api('POST', `add_results_for_cases/${run.id}`, { results });
 console.log(
@@ -207,4 +249,73 @@ console.log(
     `${cases.filter((c) => c.status === 'failed').length} failed, ` +
     `${cases.filter((c) => c.status === 'skipped').length} skipped).`,
 );
+
+// ---- Attachments for FAILED cases (screenshots) -------------------------
+// Playwright stores attachment paths relative to its output dir; the runner
+// writes a "<results>.artifacts" sidecar with that dir for zero-config runs.
+function resolveAttachmentsDir() {
+  if (attachmentsDirArg) return path.resolve(attachmentsDirArg);
+  const sidecar = `${reportPath}.artifacts`;
+  if (fs.existsSync(sidecar)) return path.resolve(fs.readFileSync(sidecar, 'utf8').trim());
+  if (process.env.PW_ATTACHMENTS_DIR) return path.resolve(process.env.PW_ATTACHMENTS_DIR);
+  return process.cwd();
+}
+
+async function uploadAttachment(resultId, filePath, fileName) {
+  const form = new FormData();
+  form.append('attachment', new Blob([fs.readFileSync(filePath)]), fileName);
+  const res = await fetch(`${baseUrl}/index.php?/api/v2/add_attachment_to_result/${resultId}`, {
+    method: 'POST',
+    headers: { Authorization: `Basic ${auth}` },
+    body: form,
+  });
+  if (!res.ok) {
+    const text = await res.text().catch(() => '');
+    throw new Error(`upload failed: ${res.status} ${text.slice(0, 200)}`);
+  }
+  return res.json().catch(() => null);
+}
+
+// Map uploaded results back to their case id (response order is not guaranteed).
+const resultIdByCase = new Map();
+for (const p of posted ?? []) {
+  const caseKey = p.case_id ?? p.caseId;
+  if (caseKey != null && p.id != null) resultIdByCase.set(String(caseKey), p.id);
+}
+
+const attachBase = resolveAttachmentsDir();
+let uploadedAttachments = 0;
+for (let i = 0; i < cases.length; i += 1) {
+  const c = cases[i];
+  if (c.status !== 'failed') continue;
+  const resultId = resultIdByCase.get(String(c.caseId)) ?? posted?.[i]?.id;
+  if (!resultId) {
+    console.warn(`[testrail] no result id for C${c.caseId} — attachment skipped`);
+    continue;
+  }
+
+  // Prefer screenshots (png); skip traces/videos.
+  const shots = (c.attachments ?? []).filter(
+    (a) => a.file && (String(a.contentType || '').startsWith('image/') || /\.png$/i.test(a.name || '')),
+  );
+  for (const shot of shots.slice(0, 3)) {
+    const filePath = path.isAbsolute(shot.file) ? shot.file : path.join(attachBase, shot.file);
+    if (!fs.existsSync(filePath)) {
+      console.warn(`[testrail] attachment not found for C${c.caseId}: ${filePath}`);
+      continue;
+    }
+    try {
+      const info = await uploadAttachment(resultId, filePath, shot.name || path.basename(filePath));
+      uploadedAttachments += 1;
+      console.log(
+        `[testrail] attached ${shot.name || path.basename(filePath)} to C${c.caseId} ` +
+          `(result ${resultId}, attachment ${info?.attachment_id ?? '?'})`,
+      );
+    } catch (err) {
+      console.warn(`[testrail] C${c.caseId} attachment: ${err.message}`);
+    }
+  }
+}
+if (uploadedAttachments) console.log(`Attached ${uploadedAttachments} screenshot(s) to failed cases.`);
+
 console.log(`Run URL: ${baseUrl}/index.php?/runs/view/${run.id}`);
