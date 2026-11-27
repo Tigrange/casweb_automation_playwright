@@ -90,6 +90,26 @@ for (const partner of partners) {
           `(missing session). Continuing.`,
       );
     }
+
+    // Publish the REAL login results (LOGIN [00] carries the TestRail login
+    // case). The auth feature runs one unit per device, so each device's file is
+    // published as its own run (that is fine: the case IDs differ per device).
+    if (publish) {
+      for (const unit of ['auth-desktop', 'auth-mobile']) {
+        const file = path.join(artifactsRoot, 'auth', envName, `results-${partner}-${unit}.json`);
+        if (!fs.existsSync(file)) {
+          console.warn(`[${partner}:${unit}] no results file (${file}) — nothing to publish`);
+          continue;
+        }
+        const unitDevice = unit.endsWith('mobile') ? 'mobile' : 'desktop';
+        const pubCode = run([
+          'scripts/publish-testrail.mjs',
+          file,
+          `--run-name=[automation] auth · ${partner} · ${envName} · ${unitDevice}`,
+        ]);
+        summary.push({ partner, step: `${unit}:publish`, code: pubCode });
+      }
+    }
   }
 
   for (const feature of features) {

@@ -19,23 +19,19 @@ import { resolveRuntimeConfig } from '#src/config/index.js';
 import { requireStorageStatePath } from '#src/config/storageState.js';
 import { LOGGED_IN_MARKERS } from '#src/config/authMarkers.js';
 import { deviceLocator } from '#src/utils/device.js';
-import { attachTestRailCaseId } from '#support/testrail.js';
 
 const { envName, partnerId, partner } = await resolveRuntimeConfig();
-
-// TestRail case IDs for the login session check (separate web/mobile cases).
-const TESTRAIL_LOGIN_SESSION = { web: 'C27448', mobile: 'C27479' };
 
 // Session check: reuse the authenticated state captured by the auth setup
 // project for this project's device. Resolved at runtime from project metadata
 // so the same spec works in every browser project without re-logging in.
+//
+// NOTE: the TestRail login case (C27448 web / C27479 mobile) is attached to the
+// REAL login in tests/support/authSetup.js (LOGIN [00]) — this check performs no
+// login, so it has no TestRail case of its own.
 test.describe('LOGIN [01]: session check (reused state)', () => {
   test.use({
     storageState: async ({}, use, testInfo) => {
-      // Attach the TestRail case ID BEFORE any setup work: when the fixture
-      // fails (e.g. missing storage state), the annotation must still exist so
-      // the failed result is uploaded to TestRail.
-      attachTestRailCaseId(testInfo, TESTRAIL_LOGIN_SESSION);
       const device = testInfo.project.metadata.authDevice ?? 'desktop';
       await use(requireStorageStatePath(envName, partnerId, device));
     },

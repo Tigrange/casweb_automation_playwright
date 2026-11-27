@@ -108,6 +108,8 @@ export default defineConfig({
       name: 'auth-desktop',
       testMatch: /support[\\/]setup\.desktop\.spec\.js/,
       fullyParallel: false,
+      // Device metadata used by the TestRail case-ID resolver (C27448 = web).
+      metadata: { authDevice: 'desktop' },
       // Real logins are slow (often 40s+ on these production sites) and can
       // exceed the global 60s limit when partners run in parallel, so give the
       // auth projects extra headroom.
@@ -124,6 +126,8 @@ export default defineConfig({
       name: 'auth-mobile',
       testMatch: /support[\\/]setup\.mobile\.spec\.js/,
       fullyParallel: false,
+      // Device metadata used by the TestRail case-ID resolver (C27479 = mobile).
+      metadata: { authDevice: 'mobile' },
       // See auth-desktop: real logins need more than the global 60s under load.
       timeout: 120_000,
       use: { ...devices['Pixel 5'] },

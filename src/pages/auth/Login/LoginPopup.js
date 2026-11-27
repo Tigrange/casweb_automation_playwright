@@ -15,6 +15,8 @@
 
 import BasePage from '../../BasePage.js';
 import { automationSelector } from '../../../utils/automation.js';
+import { getRuntimeConfig } from '#src/config/index.js';
+import { waitForCloudflare, cloudflareBlockedError } from '#support/cloudflareEvidence.js';
 
 export class LoginPopup extends BasePage {
   /** Device-aware selectors per semantic name. */
@@ -60,7 +62,25 @@ export class LoginPopup extends BasePage {
    */
   async open() {
     await this.openTrigger.evaluate((el) => el.click());
-    await this.container.waitFor({ state: 'visible' });
+    // Some partners sit behind Cloudflare: the login page never renders and the
+    // container wait would burn the whole test timeout. Detect the challenge in
+    // parallel and fail fast with a labeled error.
+    const outcome = await Promise.race([
+      this.container
+        .waitFor({ state: 'visible', timeout: 60_000 })
+        .then(() => 'form')
+        .catch(() => null),
+      waitForCloudflare(this.page, 30_000).then((isCf) => (isCf ? 'cloudflare' : null)),
+    ]);
+    if (outcome === 'cloudflare') {
+      const { partnerId, envName } = getRuntimeConfig();
+      throw await cloudflareBlockedError(this.page, {
+        partnerId,
+        envName,
+        device: this.device,
+      });
+    }
+    if (outcome !== 'form') throw new Error('Login form did not appear');
   }
 
   /**

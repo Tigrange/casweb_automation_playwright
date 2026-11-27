@@ -36,6 +36,7 @@ import { storageStatePath } from '#src/config/storageState.js';
 import { playerPath } from '#src/config/players.js';
 // import { registerPlayer } from '#src/api/registerApi.js'; // registration disabled (see note above)
 import { LOGGED_IN_MARKERS } from '#src/config/authMarkers.js';
+import { attachTestRailCaseId } from '#support/testrail.js';
 
 /**
  * Register the real-login setup tests for one device.
@@ -65,7 +66,12 @@ export function defineAuthSetup(device) {
     for (const envName of envNames) {
       test(
         `LOGIN [00] REAL E2E login · ${partner.displayName} [${envName}] · ${device}`,
-        async ({ page }) => {
+        async ({ page }, testInfo) => {
+          // TestRail case IDs for the REAL login (separate web/mobile cases).
+          // Attached FIRST so even a setup failure (missing player file) is
+          // reported against the login case.
+          attachTestRailCaseId(testInfo, { web: 'C27448', mobile: 'C27479' });
+
           const baseURL = partner.envs[envName].baseURL;
 
           // [DISABLED 2026-11-18 per tech-lead decision] No fresh player per
